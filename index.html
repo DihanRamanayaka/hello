@@ -1058,20 +1058,19 @@
 
                 <!-- SoundCloud Embedded Playback Pipelines (Invisible inside DOM) -->
                 <div class="sc-iframe-pipeline">
-                    <!-- Chevy - Morning Coffee (w/ Nalba) -->
-                    <iframe id="sc-track-pipeline-1" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/906720733&color=%23ff5500&auto_play=true&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false"></iframe>
-          
-                    <!-- Chevy - Circles -->
-                    <iframe id="sc-track-pipeline-2" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/chevyha/circles&color=%23ff5500&auto_play=true&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false"></iframe>
+                    <!-- Stream Cafe -->
+                    <iframe id="sc-track-pipeline-1" width="100%" height="300" scrolling="no" frameborder="no" allow="autoplay; encrypted-media" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/soundcloud%253Atracks%253A1253374027&color=%23cc9680&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true"></iframe>
+                    <div style="font-size:10px;color:#cccccc;line-break:anywhere;word-break:normal;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-family:Inter,Lucida%20Grande,Lucida%20Sans%20Unicode,Lucida%20Sans,Garuda,Verdana,Tahoma,sans-serif;font-weight:100;">
+                        <a href="https://soundcloud.com/user-626958513-723627285" title="Stream Cafe" target="_blank" style="color:#cccccc;text-decoration:none;">Stream Cafe</a>
+                    </div>
 
-                    <!-- Pastel Skies and Paper Planes -->
-                    <iframe id="sc-track-pipeline-3" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1644433230&color=%23ff5500&auto_play=true&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false"></iframe>
-
-                    <!-- I Love You 3000 Cover -->
-                    <iframe id="sc-track-pipeline-4" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1736326116&color=%23ff5500&auto_play=true&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false"></iframe>
-
-                    <!-- I Love You 3000 Cover Variant -->
-                    <iframe id="sc-track-pipeline-5" width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1736326116&color=%23ff5500&auto_play=true&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false"></iframe>
+                    <!-- Dalkom Sounds / Mochi Cat -->
+                    <iframe id="sc-track-pipeline-2" width="100%" height="300" scrolling="no" frameborder="no" allow="autoplay; encrypted-media" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/soundcloud%253Atracks%253A2131280085&color=%23cc9680&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true"></iframe>
+                    <div style="font-size:10px;color:#cccccc;line-break:anywhere;word-break:normal;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-family:Inter,Lucida%20Grande,Lucida%20Sans%20Unicode,Lucida%20Sans,Garuda,Verdana,Tahoma,sans-serif;font-weight:100;">
+                        <a href="https://soundcloud.com/dalkomsounds-sc" title="Dalkom Sounds" target="_blank" style="color:#cccccc;text-decoration:none;">Dalkom Sounds</a>
+                        &nbsp;·&nbsp;
+                        <a href="https://soundcloud.com/dalkomsounds-sc/mochi-cat" title="Mochi Cat" target="_blank" style="color:#cccccc;text-decoration:none;">Mochi Cat</a>
+                    </div>
                 </div>
 
                 <!-- FLOATING DYNAMIC ISLAND ELEMENT -->
@@ -1140,11 +1139,8 @@
                 <script>
                     (function() {
                         const playerIds = [
-                            'sc-track-pipeline-1', 
-                            'sc-track-pipeline-2', 
-                            'sc-track-pipeline-3', 
-                            'sc-track-pipeline-4', 
-                            'sc-track-pipeline-5'
+                            'sc-track-pipeline-1',
+                            'sc-track-pipeline-2'
                         ];
                         let scPlayers = [];
                         let currentIdx = 0;
@@ -1209,7 +1205,8 @@
 
                                 player.bind(SC.Widget.Events.FINISH, () => {
                                     if (idx === currentIdx) {
-                                        transitionToTrack(currentIdx + 1);
+                                        // loop same track when it finishes
+                                        try { player.play(); } catch(e) { /* ignore */ }
                                     }
                                 });
 
