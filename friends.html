@@ -31,6 +31,20 @@
             0% { transform: scale(0.5) translate(0, 0); opacity: 1; } 
             100% { transform: scale(1.2) translate(var(--dx), var(--dy)); opacity: 0; } 
         }
+        /* Apply default custom cursor to the whole body */
+        body { 
+         font-family: 'Quicksand', sans-serif; 
+         background-color: #f8fafc; 
+         overflow-x: hidden;
+         /* Use your default cursor SVG */
+         cursor: url('assets/cursor/cursor.svg'), auto;
+       }
+
+        /* Apply pointing hand cursor to interactive elements */
+        .friend-card {
+         /* ... your existing styles ... */
+          cursor: url('assets/cursor/pointinghand.svg'), pointer;
+     }
     </style>
 </head>
 <body class="min-h-screen p-4 md:p-10 flex flex-col items-center justify-start">
