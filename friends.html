@@ -11,14 +11,14 @@
         .friend-card {
             background: #ffffff; border: 1px solid #e2e8f0; padding: 12px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
             cursor: pointer; border-radius: 1.5rem; position: relative; overflow: hidden;
             flex-shrink: 0;
         }
-        .friend-card:hover { z-index: 20; transform: scale(1.05) rotate(0deg) !important; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
-        .details { opacity: 0; transition: opacity 0.3s ease; pointer-events: none; }
+        .friend-card:hover { z-index: 20; transform: scale(1.08) rotate(0deg) !important; box-shadow: 0 25px 30px -5px rgba(0, 0, 0, 0.15); }
+        .details { opacity: 0; transition: opacity 0.4s ease; pointer-events: none; backdrop-filter: blur(4px); }
         .friend-card:hover .details { opacity: 1; pointer-events: auto; }
-        .friend-card:hover .avatar-img { filter: blur(2px); }
+        .friend-card:hover .avatar-img { filter: blur(3px); transform: scale(1.05); }
         
         @media (min-width: 768px) {
             .rot-1 { transform: rotate(-4deg); } .rot-2 { transform: rotate(3deg); }
@@ -26,79 +26,73 @@
             .rot-5 { transform: rotate(-5deg); } .rot-6 { transform: rotate(2deg); }
         }
         
-        .particle { position: fixed; pointer-events: none; font-size: 20px; z-index: 100; animation: explode 0.8s forwards; }
-        @keyframes explode { 
-            0% { transform: scale(0.5); opacity: 1; } 
-            100% { transform: scale(1.5) translateY(-50px); opacity: 0; } 
+        .particle { position: fixed; pointer-events: none; font-size: 24px; z-index: 100; animation: burst 1s ease-out forwards; }
+        @keyframes burst { 
+            0% { transform: scale(0.5) translate(0, 0); opacity: 1; } 
+            100% { transform: scale(1.2) translate(var(--dx), var(--dy)); opacity: 0; } 
         }
     </style>
 </head>
 <body class="min-h-screen p-4 md:p-10 flex flex-col items-center justify-start">
 
     <div class="max-w-5xl w-full flex flex-col items-center py-6 md:py-10">
-        
         <div class="w-full flex justify-center py-8 px-4 text-center">
             <h1 class="text-3xl md:text-5xl lg:text-6xl font-bold text-gray-800">
                 These are my <br class="md:hidden" />
-                <span class="bg-orange-100 px-6 py-2 rounded-2xl text-orange-900 border-2 border-orange-200 inline-block mt-2 md:mt-0">universe</span>
+                <span class="bg-orange-100 px-6 py-2 rounded-2xl text-orange-900 border-2 border-orange-200 inline-block mt-2 md:mt-0 transition-transform hover:scale-105 duration-300">universe</span>
             </h1>
         </div>
 
         <div class="w-full flex flex-wrap justify-center items-center gap-6 md:gap-10 py-6">
             
-            <!-- Isuru -->
+            <!-- Friend Data Mapping -->
             <div class="friend-card rot-1 w-40 md:w-56 flex flex-col items-center p-3 md:p-4" data-emoji="☕">
                 <img src="https://cdn.discordapp.com/avatars/1360805395609813002/209386929724a04483f63e86010dd4e6.webp?size=1024" alt="Isuru" class="avatar-img w-full h-32 md:h-48 object-cover mb-3 rounded-2xl transition-all duration-300">
                 <span class="font-bold text-gray-800 text-lg">Isuru</span>
-                <div class="details absolute inset-0 bg-white/90 p-4 flex flex-col items-center justify-center text-center">
-                    <p class="text-sm font-semibold text-orange-600 mb-2">"Coffee is connection that we built."</p>
-                    <a href="https://www.starbucks.com/menu" target="_blank" class="px-3 py-1 bg-orange-500 text-white rounded-lg text-xs font-bold hover:bg-orange-600 transition">Visit Website</a>
+                <div class="details absolute inset-0 bg-white/80 p-4 flex flex-col items-center justify-center text-center">
+                    <p class="text-sm font-semibold text-orange-600 mb-2">"Coffee is connection we build along with the journey"</p>
+                    <a href="https://www.starbucks.com/menu" target="_blank" class="px-4 py-2 bg-orange-500 text-white rounded-full text-xs font-bold hover:scale-110 transition-transform">Starbucks Menu</a>
                 </div>
             </div>
 
-            <!-- Su ZhyZai -->
             <div class="friend-card rot-2 w-40 md:w-56 flex flex-col items-center p-3 md:p-4" data-emoji="❤️">
                 <img src="https://www.publicdomainpictures.net/pictures/500000/nahled/anime-cat-girl.png" alt="Su ZhyZai" class="avatar-img w-full h-32 md:h-48 object-cover mb-3 rounded-2xl transition-all duration-300">
                 <span class="font-bold text-gray-800 text-lg">Su ZhyZai</span>
-                <div class="details absolute inset-0 bg-white/90 p-4 flex flex-col items-center justify-center text-center">
-                    <p class="text-sm font-semibold text-orange-600 mb-1">"Always curious about my best friend"</p>
+                <div class="details absolute inset-0 bg-white/80 p-4 flex flex-col items-center justify-center text-center">
+                    <p class="text-sm font-semibold text-orange-600">"Always curious about my best friend"</p>
                 </div>
             </div>
 
-            <!-- Minnie -->
             <div class="friend-card rot-3 w-40 md:w-56 flex flex-col items-center p-3 md:p-4" data-emoji="🏳️‍🌈">
                 <img src="https://cdn.discordapp.com/avatars/1468425802101297215/cc69064ba6c4a3235cbd8ccc0746a8e3.webp?size=1024" alt="Minnie" class="avatar-img w-full h-32 md:h-48 object-cover mb-3 rounded-2xl transition-all duration-300">
                 <span class="font-bold text-gray-800 text-lg">Minnie</span>
-                <div class="details absolute inset-0 bg-white/90 p-4 flex flex-col items-center justify-center text-center">
+                <div class="details absolute inset-0 bg-white/80 p-4 flex flex-col items-center justify-center text-center">
                     <p class="text-sm font-semibold text-orange-600 mb-2">"Everything will be fine"</p>
-                    <a href="https://amiminnie.github.io/" target="_blank" class="px-3 py-1 bg-orange-500 text-white rounded-lg text-xs font-bold hover:bg-orange-600 transition">Visit Website</a>
+                    <a href="https://amiminnie.github.io/" target="_blank" class="px-4 py-2 bg-orange-500 text-white rounded-full text-xs font-bold hover:scale-110 transition-transform">My Portfolio</a>
                 </div>
             </div>
 
-            <!-- Chaniru -->
             <div class="friend-card rot-4 w-40 md:w-56 flex flex-col items-center p-3 md:p-4" data-emoji="⚽">
                 <img src="https://cdn.discordapp.com/avatars/1483668063004921936/a04d796f0f264b6b8b3fbea193b169fb.webp?size=1024" alt="Chaniru" class="avatar-img w-full h-32 md:h-48 object-cover mb-3 rounded-2xl transition-all duration-300">
                 <span class="font-bold text-gray-800 text-lg">Chaniru</span>
-                <div class="details absolute inset-0 bg-white/90 p-4 flex flex-col items-center justify-center text-center">
-                    <p class="text-sm font-semibold text-orange-600 mb-1">"Soccer is the best"</p>
+                <div class="details absolute inset-0 bg-white/80 p-4 flex flex-col items-center justify-center text-center">
+                    <p class="text-sm font-semibold text-orange-600">"Soccer is the best"</p>
                 </div>
             </div>
 
-            <!-- Minku -->
             <div class="friend-card rot-5 w-40 md:w-56 flex flex-col items-center p-3 md:p-4" data-emoji="😂">
                 <img src="https://cdn.discordapp.com/avatars/1342023233901432893/20fa6b01e086dc9c37b2c70fef93e08b.webp?size=1024" alt="Minku" class="avatar-img w-full h-32 md:h-48 object-cover mb-3 rounded-2xl transition-all duration-300">
                 <span class="font-bold text-gray-800 text-lg">Minku</span>
-                <div class="details absolute inset-0 bg-white/90 p-4 flex flex-col items-center justify-center text-center">
-                    <p class="text-sm font-semibold text-orange-600 mb-1">"Call me a lazy programmer"</p>
+                <div class="details absolute inset-0 bg-white/80 p-4 flex flex-col items-center justify-center text-center">
+                    <p class="text-sm font-semibold text-orange-600">"Call me a lazy programmer"</p>
                 </div>
             </div>
 
-            <!-- Frank -->
             <div class="friend-card rot-6 w-40 md:w-56 flex flex-col items-center p-3 md:p-4" data-emoji="😩">
                 <img src="https://cdn.discordapp.com/avatars/1400716262665093206/ebb8814e0aee4ca02fde472662fe06a7.webp?size=1024" alt="Frank" class="avatar-img w-full h-32 md:h-48 object-cover mb-3 rounded-2xl transition-all duration-300">
                 <span class="font-bold text-gray-800 text-lg">Frank</span>
-                <div class="details absolute inset-0 bg-white/90 p-4 flex flex-col items-center justify-center text-center">
-                    <p class="text-sm font-semibold text-orange-600 mb-1">"Be the mayor of the CS"</p>
+                <div class="details absolute inset-0 bg-white/80 p-4 flex flex-col items-center justify-center text-center">
+                    <p class="text-sm font-semibold text-orange-600">"I need to study some CS"</p>
                 </div>
             </div>
         </div>
@@ -110,20 +104,25 @@
                 const emoji = card.getAttribute('data-emoji');
                 if (!emoji) return;
                 const rect = card.getBoundingClientRect();
-                const corners = [
+                const points = [
                     {x: rect.left, y: rect.top},
                     {x: rect.right, y: rect.top},
                     {x: rect.left, y: rect.bottom},
                     {x: rect.right, y: rect.bottom}
                 ];
-                corners.forEach(pos => {
+                points.forEach(pos => {
                     const p = document.createElement('div');
                     p.className = 'particle';
                     p.innerText = emoji;
                     p.style.left = pos.x + 'px';
                     p.style.top = pos.y + 'px';
+                    // Random burst direction
+                    const dx = (Math.random() - 0.5) * 150;
+                    const dy = (Math.random() - 0.5) * 150 - 50;
+                    p.style.setProperty('--dx', dx + 'px');
+                    p.style.setProperty('--dy', dy + 'px');
                     document.body.appendChild(p);
-                    setTimeout(() => p.remove(), 800);
+                    setTimeout(() => p.remove(), 1000);
                 });
             });
         });
