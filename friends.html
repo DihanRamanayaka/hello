@@ -31,6 +31,11 @@
             0% { transform: scale(0.5) translate(0, 0); opacity: 1; } 
             100% { transform: scale(1.2) translate(var(--dx), var(--dy)); opacity: 0; } 
         }
+        .best-friend-badge {
+            position: absolute; top: 8px; right: 8px; background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+            color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;
+            box-shadow: 0 2px 8px rgba(255, 107, 107, 0.4); z-index: 10;
+        }
         /* Apply default custom cursor to the whole body */
         body { 
          font-family: 'Quicksand', sans-serif; 
@@ -70,7 +75,8 @@
             </div>
 
             <div class="friend-card rot-2 w-40 md:w-56 flex flex-col items-center p-3 md:p-4" data-emoji="❤️">
-                <img src="https://www.publicdomainpictures.net/pictures/500000/nahled/anime-cat-girl.png" alt="Su ZhyZai" class="avatar-img w-full h-32 md:h-48 object-cover mb-3 rounded-2xl transition-all duration-300">
+                <div class="best-friend-badge">Best Friend</div>
+                <img src="https://i.pinimg.com/736x/19/69/7e/19697e36c0b08680a24a668930f49d3b.jpg" alt="Su ZhyZai" class="avatar-img w-full h-32 md:h-48 object-cover mb-3 rounded-2xl transition-all duration-300">
                 <span class="font-bold text-gray-800 text-lg">Su ZhyZai</span>
                 <div class="details absolute inset-0 bg-white/80 p-4 flex flex-col items-center justify-center text-center">
                     <p class="text-sm font-semibold text-orange-600">"Always curious about my best friend"</p>
@@ -87,6 +93,7 @@
             </div>
 
             <div class="friend-card rot-4 w-40 md:w-56 flex flex-col items-center p-3 md:p-4" data-emoji="⚽">
+                <div class="best-friend-badge">Best Friend</div>
                 <img src="https://cdn.discordapp.com/avatars/1483668063004921936/aa54ca811bebbdc8440ebd71c511bf74.webp?size=1024" alt="Chaniru" class="avatar-img w-full h-32 md:h-48 object-cover mb-3 rounded-2xl transition-all duration-300">
                 <span class="font-bold text-gray-800 text-lg">Chaniru</span>
                 <div class="details absolute inset-0 bg-white/80 p-4 flex flex-col items-center justify-center text-center">
