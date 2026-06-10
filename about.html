@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dihan Ramanayaka | About the Universe</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Quicksand', sans-serif; background-color: #f8fafc; overflow-x: hidden; cursor: url("assets/cursor/cursor.svg") 16 16, auto; }
+        
+        .card {
+            background: #ffffff; border: 1px solid #e2e8f0; padding: 24px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: url("assets/cursor/pointinghand.svg") 16 0, pointer; border-radius: 2rem; position: relative; overflow: hidden;
+        }
+        .card:hover { z-index: 20; transform: scale(1.05) rotate(0deg) !important; box-shadow: 0 25px 30px -5px rgba(0, 0, 0, 0.15); }
+        
+        .particle { position: fixed; pointer-events: none; font-size: 24px; z-index: 100; animation: burst 1s ease-out forwards; }
+        @keyframes burst { 
+            0% { transform: scale(0.5) translate(0, 0); opacity: 1; } 
+            100% { transform: scale(1.2) translate(var(--dx), var(--dy)); opacity: 0; } 
+        }
+
+        .rot-1 { transform: rotate(-3deg); } .rot-2 { transform: rotate(2deg); }
+        .rot-3 { transform: rotate(-1deg); } .rot-4 { transform: rotate(3deg); }
+        
+        .badge {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
+            background: #fff7ed; color: #7c2d12; border: 1px solid #fed7aa;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-10 flex flex-col items-center">
+
+    <header class="max-w-4xl w-full text-center py-10">
+        <h1 class="text-4xl md:text-6xl font-bold text-gray-800">
+            Hi! I'm <span class="bg-orange-100 px-4 py-1 rounded-2xl text-orange-900 border-2 border-orange-200">Dihan Ramanayaka</span>
+        </h1>
+        <p class="mt-6 text-xl text-gray-600 max-w-2xl mx-auto font-medium">
+            Programmer by day, cat & plant enthusiast by heart.
+        </p>
+    </header>
+
+    <section class="max-w-5xl w-full py-6">
+        <h2 class="text-2xl font-bold text-gray-800 mb-8 px-4 text-center">My Essence</h2>
+        <div class="flex flex-wrap justify-center gap-6">
+            
+            <div class="card rot-1 w-72 p-6 flex flex-col items-center text-center" data-emoji="💻">
+                <div class="badge"><i data-lucide="code" class="w-4 h-4"></i> Developer</div>
+                <div class="text-5xl my-6">🚀</div>
+                <h3 class="font-bold text-gray-800 text-lg">Programming</h3>
+                <p class="text-sm text-gray-500 mt-2 mb-4">Crafting logic and building things from scratch.</p>
+                <a href="https://github.com/RandomCatUser" target="_blank" class="px-6 py-2 bg-gray-800 text-white rounded-full text-xs font-bold hover:bg-orange-600 transition-colors flex items-center gap-2">
+                    <i></i> My GitHub
+                </a>
+            </div>
+
+            <div class="card rot-2 w-72 p-6 flex flex-col items-center text-center" data-emoji="🪴">
+                <div class="badge"><i data-lucide="sprout" class="w-4 h-4"></i> Nature</div>
+                <div class="text-5xl my-6">🪴</div>
+                <h3 class="font-bold text-gray-800 text-lg">Project Green Plants</h3>
+                <p class="text-sm text-gray-500 mt-2">In a love with green plants. I love Jungles too!</p>
+            </div>
+
+            <div class="card rot-3 w-72 p-6 flex flex-col items-center text-center" data-emoji="🐈">
+                <div class="badge"><i data-lucide="heart" class="w-4 h-4"></i> Pets</div>
+                <div class="text-5xl my-6">🐈</div>
+                <h3 class="font-bold text-gray-800 text-lg">Cat Kitty</h3>
+                <p class="text-sm text-gray-500 mt-2">Master of purrs, and obsessed with with cats.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="max-w-4xl w-full py-12">
+        <h2 class="text-2xl font-bold text-gray-800 mb-8 text-center flex items-center justify-center gap-2">
+            <i data-lucide="wrench"></i> My Toolkit
+        </h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 px-4">
+            <div class="card p-4 flex flex-col items-center gap-2">
+                <i data-lucide="cpu" class="text-orange-500"></i>
+                <span class="font-semibold text-gray-700">JavaScript</span>
+            </div>
+            <div class="card p-4 flex flex-col items-center gap-2">
+                <i data-lucide="layout" class="text-orange-500"></i>
+                <span class="font-semibold text-gray-700">React</span>
+            </div>
+            <div class="card p-4 flex flex-col items-center gap-2">
+                <i data-lucide="wind" class="text-orange-500"></i>
+                <span class="font-semibold text-gray-700">Tailwind</span>
+            </div>
+            <div class="card p-4 flex flex-col items-center gap-2">
+                <i data-lucide="terminal" class="text-orange-500"></i>
+                <span class="font-semibold text-gray-700">Python</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="max-w-5xl w-full py-6">
+        <h2 class="text-2xl font-bold text-gray-800 mb-8 text-center flex items-center justify-center gap-2">
+            <i data-lucide="compass"></i> Beyond the Code
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-4">
+            <div class="card p-6 flex flex-col items-center text-center" data-emoji="📸">
+                <i data-lucide="camera" class="w-8 h-8 text-orange-500 mb-4"></i>
+                <h3 class="font-bold text-gray-800">Photography</h3>
+                <p class="text-sm text-gray-500 mt-2">Freezing time, one shutter click at a time.</p>
+            </div>
+            <div class="card p-6 flex flex-col items-center text-center" data-emoji="⏱️">
+                <i data-lucide="trophy" class="w-8 h-8 text-orange-500 mb-4"></i>
+                <h3 class="font-bold text-gray-800">MCSR Ranked</h3>
+                <p class="text-sm text-gray-500 mt-2">Speedrunning challenges in Minecraft.</p>
+            </div>
+            <div class="card p-6 flex flex-col items-center text-center" data-emoji="🎮">
+                <i data-lucide="gamepad-2" class="w-8 h-8 text-orange-500 mb-4"></i>
+                <h3 class="font-bold text-gray-800">Gaming</h3>
+                <p class="text-sm text-gray-500 mt-2">Always ready for a new level or quest.</p>
+            </div>
+            <div class="card p-6 flex flex-col items-center text-center" data-emoji="🎨">
+                <i data-lucide="palette" class="w-8 h-8 text-orange-500 mb-4"></i>
+                <h3 class="font-bold text-gray-800">Pixel Art</h3>
+                <p class="text-sm text-gray-500 mt-2">Small squares, big creative dreams.</p>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        lucide.createIcons();
+
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('mouseenter', (e) => {
+                const emoji = card.getAttribute('data-emoji');
+                if (!emoji) return;
+                
+                for(let i = 0; i < 3; i++) {
+                    const p = document.createElement('div');
+                    p.className = 'particle';
+                    p.innerText = emoji;
+                    p.style.left = e.clientX + 'px';
+                    p.style.top = e.clientY + 'px';
+                    
+                    const dx = (Math.random() - 0.5) * 200;
+                    const dy = (Math.random() - 0.5) * 200 - 50;
+                    p.style.setProperty('--dx', dx + 'px');
+                    p.style.setProperty('--dy', dy + 'px');
+                    
+                    document.body.appendChild(p);
+                    setTimeout(() => p.remove(), 1000);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
