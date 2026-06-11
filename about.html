@@ -14,9 +14,18 @@
             background: #ffffff; border: 1px solid #e2e8f0; padding: 24px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
             transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-            cursor: url("assets/cursor/pointinghand.svg") 16 0, pointer; border-radius: 2rem; position: relative; overflow: hidden;
+            cursor: url("assets/cursor/pointinghand.svg") 16 0, pointer;
+            border-radius: 2rem; position: relative; overflow: hidden;
+            max-width: 100%; min-width: 0;
         }
         .card:hover { z-index: 20; transform: scale(1.05) rotate(0deg) !important; box-shadow: 0 25px 30px -5px rgba(0, 0, 0, 0.15); }
+        @media (hover: none) {
+            .card:hover { transform: none; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); }
+        }
+        @media (max-width: 640px) {
+            body { padding: 0.75rem 0.75rem; }
+            .card { padding: 1.5rem; border-radius: 1.5rem; }
+        }
         
         .particle { position: fixed; pointer-events: none; font-size: 24px; z-index: 100; animation: burst 1s ease-out forwards; }
         @keyframes burst { 
@@ -47,9 +56,9 @@
 
     <section class="max-w-5xl w-full py-6">
         <h2 class="text-2xl font-bold text-gray-800 mb-8 px-4 text-center">My Essence</h2>
-        <div class="flex flex-wrap justify-center gap-6">
+        <div class="flex flex-col items-center gap-6 sm:flex-row sm:flex-wrap sm:justify-center">
             
-            <div class="card rot-1 w-72 p-6 flex flex-col items-center text-center" data-emoji="💻">
+            <div class="card rot-1 w-full max-w-sm sm:w-72 p-6 flex flex-col items-center text-center" data-emoji="💻">
                 <div class="badge"><i data-lucide="code" class="w-4 h-4"></i> Developer</div>
                 <div class="text-5xl my-6">🚀</div>
                 <h3 class="font-bold text-gray-800 text-lg">Programming</h3>
@@ -59,14 +68,14 @@
                 </a>
             </div>
 
-            <div class="card rot-2 w-72 p-6 flex flex-col items-center text-center" data-emoji="🪴">
+            <div class="card rot-2 w-full max-w-sm sm:w-72 p-6 flex flex-col items-center text-center" data-emoji="🪴">
                 <div class="badge"><i data-lucide="sprout" class="w-4 h-4"></i> Nature</div>
                 <div class="text-5xl my-6">🪴</div>
                 <h3 class="font-bold text-gray-800 text-lg">Project Green Plants</h3>
                 <p class="text-sm text-gray-500 mt-2">In a love with green plants. I love Jungles too!</p>
             </div>
 
-            <div class="card rot-3 w-72 p-6 flex flex-col items-center text-center" data-emoji="🐈">
+            <div class="card rot-3 w-full max-w-sm sm:w-72 p-6 flex flex-col items-center text-center" data-emoji="🐈">
                 <div class="badge"><i data-lucide="heart" class="w-4 h-4"></i> Pets</div>
                 <div class="text-5xl my-6">🐈</div>
                 <h3 class="font-bold text-gray-800 text-lg">Cat Kitty</h3>
@@ -79,7 +88,7 @@
         <h2 class="text-2xl font-bold text-gray-800 mb-8 text-center flex items-center justify-center gap-2">
             <i data-lucide="wrench"></i> My Toolkit
         </h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 px-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 px-4">
             <div class="card p-4 flex flex-col items-center gap-2">
                 <i data-lucide="cpu" class="text-orange-500"></i>
                 <span class="font-semibold text-gray-700">JavaScript</span>
