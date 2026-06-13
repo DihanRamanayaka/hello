@@ -13,6 +13,15 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         /* Ensure scrolling works on small screens */
         html, body { height: 100%; }
+
+        /* Custom cursors */
+        html, body {
+            cursor: url("./assets/cursor/cursor.svg") 16 16, auto;
+        }
+
+        a, button, [role="button"], .bg-white.rounded-full.p-2.flex.items-center.justify-between, #search-btn, #close-btn {
+            cursor: url("./assets/cursor/pointinghand.svg") 0 0, pointer;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center p-4 md:p-8 bg-gray-50">
