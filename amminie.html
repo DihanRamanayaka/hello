@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amminie OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        :root {
+            --bg-dark: #1a1b26;
+            --glass-bg: rgba(26, 27, 38, 0.7);
+            --accent: #7aa2f7;
+            --glass-opacity: 0.7;
+        }
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #1a1b26; 
+            font-family: 'Inter', sans-serif; 
+            color: #c0caf5;
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            transition: background 0.5s ease;
+            cursor: default;
+        }
+        
+        .glass-window {
+            position: absolute;
+            background: rgba(26, 27, 38, var(--glass-opacity));
+            backdrop-filter: blur(24px) saturate(180%);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            width: 600px;
+            height: 500px;
+            z-index: 10;
+            overflow: hidden;
+            min-width: 250px;
+            min-height: 200px;
+            resize: both;
+        }
+
+        /* Responsive Desktop vs Mobile */
+        @media (min-width: 768px) {
+            .glass-window { position: absolute; }
+        }
+
+        @media (max-width: 767px) {
+            .glass-window {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                border-radius: 0 !important;
+                resize: none;
+                box-shadow: none;
+            }
+        }
+
+        .window-header {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255,255,255,0.03);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            flex-shrink: 0;
+            user-select: none;
+            cursor: grab;
+        }
+        .window-header:active { cursor: grabbing; }
+
+        .dock {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(26, 27, 38, 0.6);
+            backdrop-filter: blur(16px);
+            padding: 8px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            gap: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+        .dock-item {
+            position: relative;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 22px;
+            cursor: pointer;
+        }
+        .dock-item:hover { transform: translateY(-4px) scale(1.05); background: var(--accent); color: white; }
+        .dock-indicator {
+            position: absolute;
+            bottom: 4px;
+            width: 6px;
+            height: 6px;
+            background: #7aa2f7;
+            border-radius: 50%;
+            display: none;
+            box-shadow: 0 0 8px #7aa2f7;
+        }
+    </style>
+</head>
+<body class="w-screen h-screen">
+
+    <div id="boot-screen" class="fixed inset-0 bg-[#1a1b26] z-[9999] flex flex-col items-center justify-center transition-opacity duration-800">
+        <div class="text-4xl font-bold tracking-tighter mb-4 animate-pulse">AMMINIE OS</div>
+        <div class="w-48 h-1 bg-white/10 rounded-full overflow-hidden">
+            <div class="h-full bg-blue-500 animate-[loading_2s_ease-in-out_infinite]"></div>
+        </div>
+    </div>
+    <style>@keyframes loading { 0% { width: 0%; } 50% { width: 100%; } 100% { width: 0%; } }</style>
+
+    <div id="windows-layer"></div>
+
+    <div class="dock">
+        <div class="dock-item" id="dock-home" onclick="openWindow('Amminie Home', 'https://amiminnie.github.io/', 'home')" title="Home">
+            <i class="ph-fill ph-house"></i>
+            <div class="dock-indicator"></div>
+        </div>
+        <div class="dock-item" id="dock-blog" onclick="openWindow('Amminie Blog', 'https://amiminnie.github.io/articles.html', 'blog')" title="Blog">
+            <i class="ph-fill ph-newspaper"></i>
+            <div class="dock-indicator"></div>
+        </div>
+        <div class="dock-item" id="dock-calc" onclick="launchCalculator()" title="Calculator">
+            <i class="ph-fill ph-calculator"></i>
+            <div class="dock-indicator"></div>
+        </div>
+        <div class="w-px h-10 bg-white/10 mx-1"></div>
+        <div class="dock-item" id="dock-settings" onclick="openSettings()" title="Settings">
+            <i class="ph-fill ph-gear"></i>
+            <div class="dock-indicator"></div>
+        </div>
+        <div class="dock-item hover:!bg-red-500" onclick="shutdown()" title="Shutdown">
+            <i class="ph-fill ph-power"></i>
+        </div>
+        <div class="hidden md:flex items-center px-4 text-xs font-mono opacity-60" id="clock">00:00</div>
+    </div>
+
+    <div id="shutdown-screen" class="hidden fixed inset-0 bg-black z-[999] flex flex-col items-center justify-center">
+        <i class="ph ph-circle-notch text-5xl animate-spin text-blue-400 mb-4"></i>
+        <div class="text-sm tracking-widest uppercase opacity-70">Shutting down Amminie OS...</div>
+    </div>
+
+    <script>
+        let zIndexCounter = 10;
+        // Use the user-provided image_2bfd41.jpg as default background
+        document.body.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('image_2bfd41.jpg')`;
+
+        window.onload = () => {
+            setTimeout(() => {
+                document.getElementById('boot-screen').style.opacity = '0';
+                setTimeout(() => document.getElementById('boot-screen').remove(), 800);
+            }, 2500);
+        };
+
+        function updateDock(appType) {
+            const hasWindows = document.querySelector(`.app-${appType}`) !== null;
+            const indicator = document.querySelector(`#dock-${appType} .dock-indicator`);
+            if (indicator) indicator.style.display = hasWindows ? 'block' : 'none';
+        }
+
+        function closeWindow(id, appType) {
+            const el = document.getElementById(id);
+            if(el) {
+                el.remove();
+                updateDock(appType);
+            }
+        }
+
+        function openWindow(title, url, appType) {
+            const id = 'win-' + Math.random().toString(36).substr(2, 9);
+            const div = document.createElement('div');
+            div.className = `glass-window app-${appType}`;
+            div.id = id;
+            div.style.left = '100px';
+            div.style.top = '100px';
+            div.style.zIndex = ++zIndexCounter;
+            
+            div.innerHTML = `
+                <div class="window-header" onmousedown="bringToFront('${id}'); startDrag(event, '${id}')">
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-red-500 cursor-pointer hover:bg-red-400" onclick="closeWindow('${id}', '${appType}')"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                    </div>
+                    <span class="text-xs font-bold opacity-40 uppercase tracking-widest ml-4">${title}</span>
+                </div>
+                <iframe src="${url}" class="w-full flex-grow border-none bg-white/5"></iframe>
+            `;
+            document.getElementById('windows-layer').appendChild(div);
+            updateDock(appType);
+        }
+
+        function launchCalculator() {
+            const id = 'calc-' + Math.random().toString(36).substr(2, 9);
+            const appType = 'calc';
+            const div = document.createElement('div');
+            div.className = `glass-window app-${appType}`;
+            div.id = id;
+            div.style.left = '200px';
+            div.style.top = '200px';
+            div.style.zIndex = ++zIndexCounter;
+            div.style.width = '300px';
+            div.style.height = '400px';
+
+            div.innerHTML = `
+                <div class="window-header" onmousedown="bringToFront('${id}'); startDrag(event, '${id}')">
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-red-500 cursor-pointer hover:bg-red-400" onclick="closeWindow('${id}', '${appType}')"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                    </div>
+                    <span class="text-xs font-bold opacity-40 uppercase tracking-widest ml-4">Calculator</span>
+                </div>
+                <div class="p-4 flex flex-col gap-2 h-full">
+                    <div id="calc-display-${id}" class="w-full bg-black/30 p-4 rounded text-right text-xl font-mono mb-2 h-16 flex items-center justify-end">0</div>
+                    <div class="grid grid-cols-4 gap-2 flex-grow">
+                        ${['7','8','9','/','4','5','6','*','1','2','3','-','C','0','=','+'].map(btn => `
+                            <button onclick="handleCalcBtn('${id}', '${btn}')" class="bg-white/10 hover:bg-white/20 rounded p-2 transition text-lg">${btn}</button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            document.getElementById('windows-layer').appendChild(div);
+            updateDock(appType);
+        }
+
+        window.handleCalcBtn = (winId, val) => {
+            const displayEl = document.getElementById(`calc-display-${winId}`);
+            let current = displayEl.innerText === '0' || displayEl.innerText === 'Error' ? '' : displayEl.innerText;
+            if (val === 'C') displayEl.innerText = '0';
+            else if (val === '=') {
+                try { displayEl.innerText = eval(current); } 
+                catch { displayEl.innerText = 'Error'; }
+            } else { displayEl.innerText = current + val; }
+        };
+
+        function openSettings() {
+            const id = 'settings-win';
+            const appType = 'settings';
+            if (document.getElementById(id)) return;
+            const div = document.createElement('div');
+            div.className = `glass-window app-${appType}`;
+            div.id = id;
+            div.style.left = '300px';
+            div.style.top = '150px';
+            div.style.zIndex = ++zIndexCounter;
+            div.style.width = '400px';
+            div.style.height = '450px';
+            
+            const wallpapers = [
+                'https://w0.peakpx.com/wallpaper/373/646/HD-wallpaper-lo-fi-sunset-chill-nature-relax.jpg',
+                'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&q=80&w=1000',
+                'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=1000'
+            ];
+
+            div.innerHTML = `
+                <div class="window-header" onmousedown="bringToFront('${id}'); startDrag(event, '${id}')">
+                    <span class="text-xs font-bold opacity-40 uppercase tracking-widest">Settings</span>
+                    <div class="w-3 h-3 rounded-full bg-red-500 cursor-pointer" onclick="closeWindow('${id}', '${appType}')"></div>
+                </div>
+                <div class="p-6">
+                    <h3 class="font-bold mb-4">Desktop Wallpaper</h3>
+                    <div class="grid grid-cols-3 gap-2 mb-8">
+                        ${wallpapers.map(url => `<div onclick="setWallpaper('${url}')" class="h-16 rounded cursor-pointer bg-cover border border-white/10 hover:border-accent" style="background-image:url('${url}')"></div>`).join('')}
+                    </div>
+                    <h3 class="font-bold mb-4">System Opacity</h3>
+                    <input type="range" min="0.3" max="0.9" step="0.1" value="0.7" onchange="updateOpacity(this.value)" class="w-full">
+                </div>
+            `;
+            document.getElementById('windows-layer').appendChild(div);
+            updateDock(appType);
+        }
+
+        function setWallpaper(url) { document.body.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${url})`; }
+        function updateOpacity(val) { document.documentElement.style.setProperty('--glass-opacity', val); }
+        function bringToFront(id) { document.getElementById(id).style.zIndex = ++zIndexCounter; }
+        
+        function shutdown() { 
+            document.getElementById('shutdown-screen').classList.remove('hidden');
+            setTimeout(() => {
+                window.location.href = 'https://dihanramanayaka.github.io/hello/';
+            }, 2000);
+        }
+
+        function startDrag(e, id) {
+            if (window.innerWidth < 768) return; 
+            const elmnt = document.getElementById(id);
+            let pos1 = 0, pos2 = 0, pos3 = e.clientX, pos4 = e.clientY;
+            document.onmousemove = (e) => {
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+                elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+            };
+            document.onmouseup = () => { document.onmouseup = null; document.onmousemove = null; };
+        }
+
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+        }, 1000);
+    </script>
+</body>
+</html>
