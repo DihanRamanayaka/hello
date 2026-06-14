@@ -251,8 +251,17 @@
                         </div>
                         <span class="text-xs font-bold opacity-40 uppercase tracking-widest ml-4">Browser</span>
                     </div>
-                    <div class="flex flex-col h-full">
-                        <div class="p-2 flex gap-2 items-center bg-white/5">
+                    <div class="flex flex-col h-full relative">
+                    <div id="frame-warning-${id}" class="absolute inset-0 flex items-center justify-center bg-black/60 text-white p-4 hidden z-10">
+                        <div class="text-center">
+                            <div class="mb-3">This site prevents embedding in an iframe.</div>
+                            <div class="flex gap-2 justify-center">
+                                <button onclick="document.getElementById('frame-warning-${id}').classList.add('hidden')" class="px-3 py-1 bg-white/10 rounded">Dismiss</button>
+                                <button onclick="openInExternalId('${id}')" class="px-3 py-1 bg-blue-500 rounded text-white">Open in new tab</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-2 flex gap-2 items-center bg-white/5">
                             <button class="px-2 py-1 bg-white/10 rounded" onclick="browserBack('${id}')">◀</button>
                             <button class="px-2 py-1 bg-white/10 rounded" onclick="browserForward('${id}')">▶</button>
                             <button class="px-2 py-1 bg-white/10 rounded" onclick="browserReload('${id}')">⟳</button>
@@ -280,7 +289,37 @@
                 state.history.push(url);
                 state.index = state.history.length - 1;
                 window.browserStates[id] = state;
+                // hide any previous warning, set dataset for fallback
+                const overlay = document.getElementById(`frame-warning-${id}`);
+                if (overlay) { overlay.classList.add('hidden'); overlay.dataset.url = url; }
                 iframe.src = url;
+
+                // detection: if iframe load is blocked by X-Frame-Options/CSP, accessing its document will throw.
+                const detectBlocked = () => {
+                    try {
+                        // try same-origin access; will throw for cross-origin if blocked
+                        const doc = iframe.contentDocument || iframe.contentWindow.document;
+                        // If document exists and has content (not about:blank), assume success
+                        if (doc && doc.readyState) {
+                            // loaded okay
+                            return false;
+                        }
+                    } catch (e) {
+                        return true;
+                    }
+                    return false;
+                };
+
+                // run detection shortly after navigation and also on load
+                setTimeout(() => { if (detectBlocked()) { if (overlay) overlay.classList.remove('hidden'); } }, 700);
+                iframe.onload = () => { if (detectBlocked()) { if (overlay) overlay.classList.remove('hidden'); } else { if (overlay) overlay.classList.add('hidden'); } };
+            }
+
+            function openInExternalId(id) {
+                const overlay = document.getElementById(`frame-warning-${id}`);
+                if (!overlay) return;
+                const url = overlay.dataset.url || (window.browserStates[id] && window.browserStates[id].history[window.browserStates[id].index]);
+                if (url) window.open(url, '_blank', 'noopener');
             }
 
             function browserBack(id) {
