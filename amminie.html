@@ -44,7 +44,6 @@
             resize: both;
         }
 
-        /* Responsive Desktop vs Mobile */
         @media (min-width: 768px) {
             .glass-window { position: absolute; }
         }
@@ -159,8 +158,14 @@
 
     <script>
         let zIndexCounter = 10;
-        // Use the user-provided image_2bfd41.jpg as default background
-        document.body.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('image_2bfd41.jpg')`;
+        const wallpapers = [
+            'https://img.magnific.com/free-photo/beautiful-anime-sakura-landscape-cartoon-scene_23-2151035221.jpg',
+            'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&q=80&w=1000',
+            'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=1000'
+        ];
+
+        // Set default background to the first wallpaper
+        document.body.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('${wallpapers[0]}')`;
 
         window.onload = () => {
             setTimeout(() => {
@@ -264,12 +269,6 @@
             div.style.width = '400px';
             div.style.height = '450px';
             
-            const wallpapers = [
-                'https://w0.peakpx.com/wallpaper/373/646/HD-wallpaper-lo-fi-sunset-chill-nature-relax.jpg',
-                'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&q=80&w=1000',
-                'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=1000'
-            ];
-
             div.innerHTML = `
                 <div class="window-header" onmousedown="bringToFront('${id}'); startDrag(event, '${id}')">
                     <span class="text-xs font-bold opacity-40 uppercase tracking-widest">Settings</span>
@@ -288,7 +287,7 @@
             updateDock(appType);
         }
 
-        function setWallpaper(url) { document.body.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${url})`; }
+        function setWallpaper(url) { document.body.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('${url}')`; }
         function updateOpacity(val) { document.documentElement.style.setProperty('--glass-opacity', val); }
         function bringToFront(id) { document.getElementById(id).style.zIndex = ++zIndexCounter; }
         
