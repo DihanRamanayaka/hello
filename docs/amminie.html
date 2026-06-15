@@ -147,6 +147,16 @@
         }
         .window-open { animation: windowOpen 320ms cubic-bezier(.2,.9,.3,1) both; }
 
+        @keyframes windowMinimize {
+            to { transform: scale(0.7) translateY(24px); opacity: 0; }
+        }
+        @keyframes windowRestore {
+            from { transform: scale(0.7) translateY(24px); opacity: 0; }
+            to { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        .glass-window.minimizing { animation: windowMinimize 220ms ease forwards; }
+        .glass-window.restoring { animation: windowRestore 260ms ease forwards; }
+
         /* Dock bounce on load */
         @keyframes dockBounce { 0% { transform: translateY(8px); } 50% { transform: translateY(-4px);} 100% { transform: translateY(0);} }
         .dock-item.initial-bounce { animation: dockBounce 700ms ease; }
@@ -187,6 +197,10 @@
             <i class="ph-fill ph-newspaper"></i>
             <div class="dock-indicator"></div>
         </div>
+        <div class="dock-item" id="dock-game" onclick="openGame()" title="Pong">
+            <i class="ph-fill ph-game-controller"></i>
+            <div class="dock-indicator"></div>
+        </div>
         <div class="dock-item" id="dock-calc" onclick="launchCalculator()" title="Calculator">
             <i class="ph-fill ph-calculator"></i>
             <div class="dock-indicator"></div>
@@ -222,9 +236,9 @@
     <script>
         let zIndexCounter = 10;
         const wallpapers = [
-            'https://img.magnific.com/free-photo/beautiful-anime-sakura-landscape-cartoon-scene_23-2151035221.jpg',
-            'https://wallpapercg.com/download/8-bit--21380.jpg?auto=format&fit=crop&q=80&w=100',
-            'https://www.shutterstock.com/shutterstock/videos/3747813197/thumb/1.jpg?ip=x480?auto=format&fit=crop&q=80&w=1000'
+            'https://wallpapercave.com/wp/wp15674007.gif?auto=format&fit=crop&q=80&w=100',
+            'https://mir-s3-cdn-cf.behance.net/project_modules/max_1200/61d414169310563.644a50ec85a90.gif?auto=format&fit=crop&q=80&w=100',
+            'https://wallpaperaccess.com/full/9089214.jpg?auto=format&fit=crop&q=80&w=1000'
         ];
 
         // Set default background to the first wallpaper
@@ -251,7 +265,38 @@
             }
         }
 
+        function restoreWindow(appType) {
+            const minimized = document.querySelector(`.app-${appType}[data-minimized="true"]`);
+            if (!minimized) return false;
+            minimized.dataset.minimized = 'false';
+            minimized.style.display = '';
+            minimized.classList.remove('minimizing');
+            minimized.classList.add('restoring');
+            minimized.style.animation = 'windowRestore 260ms ease forwards';
+            bringToFront(minimized.id);
+            setTimeout(() => {
+                minimized.classList.remove('restoring');
+                minimized.style.animation = '';
+            }, 300);
+            return true;
+        }
+
+        function minimizeWindow(id, appType) {
+            const el = document.getElementById(id);
+            if (!el || el.dataset.minimized === 'true') return;
+            el.dataset.minimized = 'true';
+            el.classList.add('minimizing');
+            el.style.animation = 'windowMinimize 220ms ease forwards';
+            setTimeout(() => {
+                el.style.display = 'none';
+                el.classList.remove('minimizing');
+                el.style.animation = '';
+            }, 220);
+            updateDock(appType);
+        }
+
         function openWindow(title, url, appType) {
+            if (restoreWindow(appType)) return;
             const id = 'win-' + Math.random().toString(36).substr(2, 9);
             const div = document.createElement('div');
             div.className = `glass-window app-${appType} window-open`;
@@ -264,7 +309,7 @@
                 <div class="window-header" onmousedown="bringToFront('${id}'); startDrag(event, '${id}')">
                     <div class="flex items-center gap-2">
                         <div class="w-3 h-3 rounded-full bg-red-500 cursor-pointer hover:bg-red-400" onclick="closeWindow('${id}', '${appType}')"></div>
-                        <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500 cursor-pointer hover:bg-yellow-400" onclick="minimizeWindow('${id}', '${appType}')"></div>
                         <div class="w-3 h-3 rounded-full bg-green-500"></div>
                     </div>
                     <span class="text-xs font-bold opacity-40 uppercase tracking-widest ml-4">${title}</span>
@@ -279,6 +324,7 @@
             window.browserStates = window.browserStates || {};
 
             function openBrowser() {
+                if (restoreWindow('browser')) return;
                 const id = 'browser-' + Math.random().toString(36).substr(2, 9);
                 const appType = 'browser';
                 const div = document.createElement('div');
@@ -293,7 +339,7 @@
                     <div class="window-header" onmousedown="bringToFront('${id}'); startDrag(event, '${id}')">
                         <div class="flex items-center gap-2">
                             <div class="w-3 h-3 rounded-full bg-red-500 cursor-pointer hover:bg-red-400" onclick="closeWindow('${id}', '${appType}')"></div>
-                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500 cursor-pointer hover:bg-yellow-400" onclick="minimizeWindow('${id}', '${appType}')"></div>
                             <div class="w-3 h-3 rounded-full bg-green-500"></div>
                         </div>
                         <span class="text-xs font-bold opacity-40 uppercase tracking-widest ml-4">Browser</span>
@@ -398,6 +444,7 @@
 
             // --- Music App (SoundCloud widget) ---
             function openMusicApp() {
+                if (restoreWindow('music')) return;
                 const id = 'music-' + Math.random().toString(36).substr(2, 9);
                 const appType = 'music';
                 const div = document.createElement('div');
@@ -410,16 +457,19 @@
                 div.style.height = '420px';
 
                 const tracks = [
-                    'https://soundcloud.com/forss/flickermood',
-                    'https://soundcloud.com/alanwalker/stories',
-                    'https://soundcloud.com/odeszaofficial/a-moment-apart'
+                    'https://soundcloud.com/chevyha/circles',
+                    'https://soundcloud.com/chevyha/fallin-twice',
+                    'https://soundcloud.com/notkimmyt/i-love-you-3000-cover',
+                    'https://soundcloud.com/notkimmyt/sets/someone-else',
+                    'https://soundcloud.com/notkimmyt/be-mine',
+                    'https://soundcloud.com/notkimmyt/talk-2-me-feat-reap'
                 ];
 
                 div.innerHTML = `
                     <div class="window-header" onmousedown="bringToFront('${id}'); startDrag(event, '${id}')">
                         <div class="flex items-center gap-2">
                             <div class="w-3 h-3 rounded-full bg-red-500 cursor-pointer hover:bg-red-400" onclick="closeWindow('${id}', '${appType}')"></div>
-                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500 cursor-pointer hover:bg-yellow-400" onclick="minimizeWindow('${id}', '${appType}')"></div>
                             <div class="w-3 h-3 rounded-full bg-green-500"></div>
                         </div>
                         <span class="text-xs font-bold opacity-40 uppercase tracking-widest ml-4">Music</span>
@@ -536,6 +586,7 @@
             }
 
         function launchCalculator() {
+            if (restoreWindow('calc')) return;
             const id = 'calc-' + Math.random().toString(36).substr(2, 9);
             const appType = 'calc';
             const div = document.createElement('div');
@@ -551,7 +602,7 @@
                 <div class="window-header" onmousedown="bringToFront('${id}'); startDrag(event, '${id}')">
                     <div class="flex items-center gap-2">
                         <div class="w-3 h-3 rounded-full bg-red-500 cursor-pointer hover:bg-red-400" onclick="closeWindow('${id}', '${appType}')"></div>
-                        <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500 cursor-pointer hover:bg-yellow-400" onclick="minimizeWindow('${id}', '${appType}')"></div>
                         <div class="w-3 h-3 rounded-full bg-green-500"></div>
                     </div>
                     <span class="text-xs font-bold opacity-40 uppercase tracking-widest ml-4">Calculator</span>
@@ -571,6 +622,7 @@
 
         // --- Console App ---
         function openConsole() {
+            if (restoreWindow('console')) return;
             const id = 'console-' + Math.random().toString(36).substr(2, 9);
             const appType = 'console';
             const div = document.createElement('div');
@@ -586,7 +638,7 @@
                 <div class="window-header" onmousedown="bringToFront('${id}'); startDrag(event, '${id}')">
                     <div class="flex items-center gap-2">
                         <div class="w-3 h-3 rounded-full bg-red-500 cursor-pointer hover:bg-red-400" onclick="closeWindow('${id}', '${appType}')"></div>
-                        <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500 cursor-pointer hover:bg-yellow-400" onclick="minimizeWindow('${id}', '${appType}')"></div>
                         <div class="w-3 h-3 rounded-full bg-green-500"></div>
                     </div>
                     <span class="text-xs font-bold opacity-40 uppercase tracking-widest ml-4">Console</span>
@@ -744,7 +796,10 @@
         function openSettings() {
             const id = 'settings-win';
             const appType = 'settings';
-            if (document.getElementById(id)) return;
+            if (document.getElementById(id)) {
+                restoreWindow(appType);
+                return;
+            }
             const div = document.createElement('div');
             div.className = `glass-window app-${appType} window-open`;
             div.id = id;
@@ -756,8 +811,12 @@
             
             div.innerHTML = `
                 <div class="window-header" onmousedown="bringToFront('${id}'); startDrag(event, '${id}')">
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-red-500 cursor-pointer hover:bg-red-400" onclick="closeWindow('${id}', '${appType}')"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500 cursor-pointer hover:bg-yellow-400" onclick="minimizeWindow('${id}', '${appType}')"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                    </div>
                     <span class="text-xs font-bold opacity-40 uppercase tracking-widest">Settings</span>
-                    <div class="w-3 h-3 rounded-full bg-red-500 cursor-pointer" onclick="closeWindow('${id}', '${appType}')"></div>
                 </div>
                 <div class="p-6">
                     <h3 class="font-bold mb-4">Desktop Wallpaper</h3>
@@ -803,6 +862,35 @@
             setTimeout(() => {
                 window.location.href = 'https://dihanramanayaka.github.io/hello/';
             }, 2000);
+        }
+
+        function openGame() {
+            if (restoreWindow('game')) return;
+            const id = 'game-' + Math.random().toString(36).substr(2, 9);
+            const appType = 'game';
+            const div = document.createElement('div');
+            div.className = `glass-window app-${appType} window-open`;
+            div.id = id;
+            div.style.left = '240px';
+            div.style.top = '160px';
+            div.style.zIndex = ++zIndexCounter;
+            div.style.width = '780px';
+            div.style.height = '520px';
+
+            div.innerHTML = `
+                <div class="window-header" onmousedown="bringToFront('${id}'); startDrag(event, '${id}')">
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-red-500 cursor-pointer hover:bg-red-400" onclick="closeWindow('${id}', '${appType}')"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500 cursor-pointer hover:bg-yellow-400" onclick="minimizeWindow('${id}', '${appType}')"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                    </div>
+                    <span class="text-xs font-bold opacity-40 uppercase tracking-widest ml-4">Pong</span>
+                </div>
+                <iframe src="pong.html" class="w-full flex-grow border-none bg-white/5"></iframe>
+            `;
+
+            document.getElementById('windows-layer').appendChild(div);
+            updateDock(appType);
         }
 
         function startDrag(e, id) {
