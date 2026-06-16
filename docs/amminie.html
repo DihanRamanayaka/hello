@@ -56,6 +56,32 @@
             background: rgba(122, 162, 247, 0.75);
         }
 
+        .window-resize-handle {
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            right: 10px;
+            bottom: 10px;
+            cursor: se-resize;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.14);
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.04);
+            z-index: 20;
+        }
+
+        .window-resize-handle::before {
+            content: '';
+            position: absolute;
+            right: 4px;
+            bottom: 4px;
+            width: 8px;
+            height: 8px;
+            border-right: 2px solid rgba(255,255,255,0.7);
+            border-bottom: 2px solid rgba(255,255,255,0.7);
+            border-radius: 2px;
+        }
+
         .glass-window {
             position: absolute;
             background: rgba(26, 27, 38, var(--glass-opacity));
@@ -1019,6 +1045,58 @@
             };
             document.onmouseup = () => { document.onmouseup = null; document.onmousemove = null; };
         }
+
+        function startResize(e, el) {
+            e.preventDefault();
+            e.stopPropagation();
+            const startWidth = el.offsetWidth;
+            const startHeight = el.offsetHeight;
+            const startX = e.clientX;
+            const startY = e.clientY;
+            const minW = parseInt(getComputedStyle(el).minWidth, 10) || 250;
+            const minH = parseInt(getComputedStyle(el).minHeight, 10) || 200;
+
+            function onMove(evt) {
+                const dx = evt.clientX - startX;
+                const dy = evt.clientY - startY;
+                el.style.width = Math.max(minW, startWidth + dx) + 'px';
+                el.style.height = Math.max(minH, startHeight + dy) + 'px';
+            }
+
+            function onUp() {
+                document.removeEventListener('pointermove', onMove);
+                document.removeEventListener('pointerup', onUp);
+            }
+
+            document.addEventListener('pointermove', onMove);
+            document.addEventListener('pointerup', onUp);
+        }
+
+        function enableWindowResizing(win) {
+            if (!win || win.dataset.resizeEnabled === 'true') return;
+            const handle = document.createElement('div');
+            handle.className = 'window-resize-handle';
+            handle.addEventListener('pointerdown', (e) => startResize(e, win));
+            win.appendChild(handle);
+            win.dataset.resizeEnabled = 'true';
+        }
+
+        function observeWindowsForResize() {
+            const layer = document.getElementById('windows-layer');
+            if (!layer) return;
+            new MutationObserver((records) => {
+                records.forEach((record) => {
+                    record.addedNodes.forEach((node) => {
+                        if (node.nodeType === 1 && node.classList.contains('glass-window')) {
+                            enableWindowResizing(node);
+                        }
+                    });
+                });
+            }).observe(layer, { childList: true });
+            document.querySelectorAll('.glass-window').forEach(enableWindowResizing);
+        }
+
+        observeWindowsForResize();
 
         setInterval(() => {
             const now = new Date();
