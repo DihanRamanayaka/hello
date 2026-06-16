@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cheese Clicker Deluxe</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap');
+        
+        body { font-family: 'Fredoka One', cursive; background-color: #fef3c7; overflow: hidden; }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+        }
+        
+        @keyframes click-pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.9); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes particle-fade {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-200px) scale(0.5); opacity: 0; }
+        }
+
+        .cheese-float { animation: float 3s ease-in-out infinite; }
+        .cheese-pop { animation: click-pop 0.15s ease-out; }
+        
+        .particle {
+            animation: particle-fade 1s ease-out forwards;
+            position: absolute;
+            font-size: 30px;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .game-card { border: 4px solid #000; box-shadow: 8px 8px 0px 0px rgba(0,0,0,1); border-radius: 20px; }
+    </style>
+</head>
+<body class="min-h-screen p-4 flex flex-col text-black">
+
+    <!-- Header -->
+    <header class="flex justify-between items-center bg-white p-6 rounded-2xl game-card mb-6">
+        <div class="flex items-center gap-4">
+            <div class="text-6xl animate-pulse">🧀</div>
+            <div>
+                <h1 class="text-4xl font-black text-orange-600" id="cheeseCount">0</h1>
+                <p class="text-sm font-bold uppercase text-gray-500 tracking-wider">Total Cheese Collected</p>
+            </div>
+        </div>
+        <div class="text-right">
+            <p class="text-2xl font-black" id="cpc">1 Per Click</p>
+            <p class="text-lg text-gray-500 font-medium" id="cps">0 Per Second</p>
+        </div>
+    </header>
+
+    <main class="flex flex-1 gap-6 overflow-hidden">
+        <!-- Game Area -->
+        <div id="particleContainer" class="flex-1 flex flex-col items-center justify-center relative bg-orange-100 rounded-3xl game-card overflow-hidden">
+            <button id="cheeseBtn" class="cursor-pointer transition-transform hover:scale-105 active:scale-95 focus:outline-none">
+                <div class="text-[12rem] cheese-float">🧀</div>
+            </button>
+            <p class="mt-8 font-black text-orange-900 text-3xl tracking-tight uppercase select-none">Click the 🧀!</p>
+        </div>
+
+        <!-- Shop & Achievements Sidebar -->
+        <div class="w-96 bg-white rounded-3xl game-card flex flex-col overflow-hidden">
+            <div class="flex border-b-4 border-black">
+                <button onclick="switchTab('shop')" id="shopTabBtn" class="flex-1 py-4 font-black text-xl bg-yellow-400 border-r-4 border-black">SHOP</button>
+                <button onclick="switchTab('achievements')" id="achieveTabBtn" class="flex-1 py-4 font-black text-xl hover:bg-gray-100">ACHIEVEMENTS</button>
+            </div>
+            <div id="contentArea" class="flex-1 overflow-y-auto p-6 space-y-4"></div>
+        </div>
+    </main>
+
+    <!-- Toast Area -->
+    <div id="toastContainer" class="fixed top-6 right-6 z-[200] space-y-4"></div>
+
+    <script>
+        let gameState = JSON.parse(localStorage.getItem('cheeseState')) || {
+            clicks: 0,
+            cheese: 0,
+            cps: 0,
+            upgrades: {
+                autoClicker: { count: 0, cost: 10, power: 1, name: 'Tiny Mouse' },
+                clickPower: { count: 0, cost: 50, power: 1, name: 'Golden Grater' },
+                factory: { count: 0, cost: 250, power: 5, name: 'Cheese Factory' }
+            },
+            unlockedAchievements: []
+        };
+
+        const achievements = [
+            { id: 1, name: 'First Nibble', threshold: 10, icon: '🤏' },
+            { id: 2, name: 'Cheese Rookie', threshold: 100, icon: '🧀' },
+            { id: 3, name: 'Sharp Cheddar', threshold: 500, icon: '🔪' },
+            { id: 4, name: 'The Big Wheel', threshold: 2000, icon: '🎡' },
+            { id: 5, name: 'Master Fromager', threshold: 10000, icon: '👑' }
+        ];
+
+        let activeTab = 'shop';
+        const cheeseBtn = document.getElementById('cheeseBtn');
+        const contentArea = document.getElementById('contentArea');
+        const particleContainer = document.getElementById('particleContainer');
+        const toastContainer = document.getElementById('toastContainer');
+
+        function updateUI() {
+            document.getElementById('cheeseCount').innerText = Math.floor(gameState.cheese).toLocaleString();
+            document.getElementById('cps').innerText = gameState.cps.toFixed(1) + ' /sec';
+            document.getElementById('cpc').innerText = (1 + gameState.upgrades.clickPower.count) + ' /click';
+            renderContent();
+            localStorage.setItem('cheeseState', JSON.stringify(gameState));
+        }
+
+        function spawnParticle(x, y) {
+            const p = document.createElement('div');
+            const icons = ['🧀', '✨', '💛', '🌟', '🧈'];
+            p.innerText = icons[Math.floor(Math.random() * icons.length)];
+            p.className = 'particle';
+            p.style.left = (x - 15) + 'px';
+            p.style.top = (y - 15) + 'px';
+            particleContainer.appendChild(p);
+            setTimeout(() => p.remove(), 1000);
+        }
+
+        function showAchievement(name, icon) {
+            const toast = document.createElement('div');
+            toast.className = 'bg-black text-white p-6 rounded-2xl border-4 border-yellow-400 font-bold shadow-2xl flex items-center gap-4 transform transition-all duration-500';
+            toast.style.animation = 'click-pop 0.5s ease-out';
+            toast.innerHTML = `<div class="text-4xl">${icon}</div> <div><p class="text-sm text-yellow-400 uppercase tracking-widest">Achievement Unlocked</p><p class="text-xl">${name}</p></div>`;
+            toastContainer.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+
+        function switchTab(tab) {
+            activeTab = tab;
+            document.getElementById('shopTabBtn').className = `flex-1 py-4 font-black text-xl ${tab === 'shop' ? 'bg-yellow-400' : ''} border-r-4 border-black`;
+            document.getElementById('achieveTabBtn').className = `flex-1 py-4 font-black text-xl ${tab === 'achievements' ? 'bg-yellow-400' : ''}`;
+            renderContent();
+        }
+
+        function renderContent() {
+            contentArea.innerHTML = '';
+            if (activeTab === 'shop') {
+                Object.keys(gameState.upgrades).forEach(key => {
+                    const upg = gameState.upgrades[key];
+                    contentArea.innerHTML += `
+                        <div class="border-4 border-black p-4 rounded-xl flex justify-between items-center bg-gray-50 hover:shadow-lg transition-shadow">
+                            <div>
+                                <p class="font-black text-md">${upg.name}</p>
+                                <p class="text-xs font-bold text-orange-600">Cost: ${Math.floor(upg.cost)}</p>
+                            </div>
+                            <button onclick="buyUpgrade('${key}')" class="bg-black text-white px-4 py-2 rounded-lg font-black text-sm hover:bg-yellow-500 hover:text-black transition-colors">BUY</button>
+                        </div>
+                    `;
+                });
+                contentArea.innerHTML += `
+                    <div class="border-4 border-dashed border-gray-400 p-6 rounded-xl text-center text-gray-400 font-black mt-4 uppercase tracking-widest text-sm">
+                        More upgrades coming soon!
+                    </div>
+                `;
+            } else {
+                achievements.forEach(ach => {
+                    const unlocked = gameState.unlockedAchievements.includes(ach.id);
+                    contentArea.innerHTML += `
+                        <div class="border-4 border-black p-4 rounded-xl flex items-center gap-4 ${unlocked ? 'bg-yellow-100' : 'bg-gray-100 opacity-60'}">
+                            <span class="text-4xl">${unlocked ? ach.icon : '🔒'}</span>
+                            <div>
+                                <p class="font-black text-md">${ach.name}</p>
+                                <p class="text-xs font-bold text-gray-600">Threshold: ${ach.threshold} clicks</p>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        function buyUpgrade(key) {
+            const upg = gameState.upgrades[key];
+            if (gameState.cheese >= upg.cost) {
+                gameState.cheese -= upg.cost;
+                upg.count++;
+                upg.cost *= 1.5;
+                if(key === 'autoClicker' || key === 'factory') gameState.cps += upg.power;
+                updateUI();
+            }
+        }
+
+        cheeseBtn.addEventListener('click', (e) => {
+            gameState.cheese += (1 + gameState.upgrades.clickPower.count);
+            gameState.clicks++;
+            
+            // Trigger pop
+            cheeseBtn.classList.add('cheese-pop');
+            setTimeout(() => cheeseBtn.classList.remove('cheese-pop'), 150);
+
+            // Check achievements
+            achievements.forEach(a => {
+                if (gameState.clicks >= a.threshold && !gameState.unlockedAchievements.includes(a.id)) {
+                    gameState.unlockedAchievements.push(a.id);
+                    showAchievement(a.name, a.icon);
+                }
+            });
+
+            // Spawn Particles
+            spawnParticle(e.clientX, e.clientY);
+            updateUI();
+        });
+
+        // Game Loop
+        setInterval(() => {
+            if(gameState.cps > 0) {
+                gameState.cheese += gameState.cps / 10;
+                updateUI();
+            }
+        }, 100);
+
+        // Initial setup
+        updateUI();
+    </script>
+</body>
+</html>

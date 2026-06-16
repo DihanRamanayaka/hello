@@ -12,6 +12,8 @@
             --bg-dark: #1a1b26;
             --glass-bg: rgba(26, 27, 38, 0.7);
             --accent: #7aa2f7;
+            --scrollbar-track: rgba(255,255,255,0.08);
+            --scrollbar-thumb: rgba(122, 162, 247, 0.55);
             --glass-opacity: 0.7;
         }
         body { 
@@ -26,7 +28,34 @@
             transition: background 0.5s ease;
             cursor: url("assets/cursor/cursor.svg") 16 16, auto;
         }
-        
+
+        .glass-window,
+        .glass-window .console-output,
+        .glass-window .settings-tab-content {
+            scrollbar-width: thin;
+            scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+        }
+
+        .glass-window ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        .glass-window ::-webkit-scrollbar-track {
+            background: var(--scrollbar-track);
+            border-radius: 999px;
+        }
+
+        .glass-window ::-webkit-scrollbar-thumb {
+            background: var(--scrollbar-thumb);
+            border-radius: 999px;
+            border: 2px solid rgba(26, 27, 38, 0.7);
+        }
+
+        .glass-window ::-webkit-scrollbar-thumb:hover {
+            background: rgba(122, 162, 247, 0.75);
+        }
+
         .glass-window {
             position: absolute;
             background: rgba(26, 27, 38, var(--glass-opacity));
@@ -806,8 +835,8 @@
             div.style.left = '300px';
             div.style.top = '150px';
             div.style.zIndex = ++zIndexCounter;
-            div.style.width = '400px';
-            div.style.height = '450px';
+            div.style.width = '450px';
+            div.style.height = '520px';
             
             div.innerHTML = `
                 <div class="window-header" onmousedown="bringToFront('${id}'); startDrag(event, '${id}')">
@@ -818,17 +847,100 @@
                     </div>
                     <span class="text-xs font-bold opacity-40 uppercase tracking-widest">Settings</span>
                 </div>
-                <div class="p-6">
-                    <h3 class="font-bold mb-4">Desktop Wallpaper</h3>
-                    <div class="grid grid-cols-3 gap-2 mb-8">
-                        ${wallpapers.map(url => `<div onclick="setWallpaper('${url}')" class="h-16 rounded cursor-pointer bg-cover border border-white/10 hover:border-accent" style="background-image:url('${url}')"></div>`).join('')}
+                <div class="flex flex-col h-full">
+                    <div class="flex gap-2 p-3 border-b border-white/10">
+                        <button onclick="switchSettingsTab('${id}', 'display', event)" class="settings-tab-btn active px-4 py-2 rounded text-sm hover:bg-white/10" data-tab="display">Display</button>
+                        <button onclick="switchSettingsTab('${id}', 'about', event)" class="settings-tab-btn px-4 py-2 rounded text-sm hover:bg-white/10" data-tab="about">About</button>
                     </div>
-                    <h3 class="font-bold mb-4">System Opacity</h3>
-                    <input type="range" min="0.3" max="0.9" step="0.1" value="0.7" onchange="updateOpacity(this.value)" class="w-full">
+                    <div class="flex-1 overflow-auto p-6">
+                        <div id="settings-tab-display" class="settings-tab-content">
+                            <h3 class="font-bold mb-4">Desktop Wallpaper</h3>
+                            <div class="grid grid-cols-3 gap-2 mb-8">
+                                ${wallpapers.map(url => `<div onclick="setWallpaper('${url}')" class="h-16 rounded cursor-pointer bg-cover border border-white/10 hover:border-accent" style="background-image:url('${url}')"></div>`).join('')}
+                            </div>
+                            <h3 class="font-bold mb-4">System Opacity</h3>
+                            <input type="range" min="0.3" max="0.9" step="0.1" value="0.7" onchange="updateOpacity(this.value)" class="w-full">
+                        </div>
+                        <div id="settings-tab-about" class="settings-tab-content hidden">
+                            <div class="space-y-4">
+                                <div>
+                                    <h3 class="font-bold text-lg mb-2">Amminie OS</h3>
+                                    <p class="text-sm opacity-80">Special Edition of Yoeshi OS</p>
+                                </div>
+                                <div class="border-t border-white/10 pt-4">
+                                    <p class="text-sm opacity-70 leading-relaxed mb-4">
+                                        Amminie OS is a premium, ethereal operating system designed for creative minds and digital aesthetes. Crafted with meticulous attention to detail, it combines stunning visual design with seamless functionality.
+                                    </p>
+                                </div>
+                                <div class="border-t border-white/10 pt-4 space-y-3">
+                                    <div>
+                                        <p class="text-xs opacity-60 uppercase tracking-widest">Version</p>
+                                        <p class="text-sm font-mono">Mini 1.2</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs opacity-60 uppercase tracking-widest">Build</p>
+                                        <p class="text-sm font-mono">Yoeshi-2026-SE</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs opacity-60 uppercase tracking-widest">Kernel</p>
+                                        <p class="text-sm font-mono">Yoeshi Kernel v3.2</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs opacity-60 uppercase tracking-widest">License</p>
+                                        <p class="text-sm font-mono">Apache 2.0 - All Rights Reserved</p>
+                                    </div>
+                                </div>
+                                <div class="border-t border-white/10 pt-4">
+                                    <p class="text-xs opacity-60">Yoeshi OS © 2026. Designed for the discerning digital experience.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             `;
             document.getElementById('windows-layer').appendChild(div);
             updateDock(appType);
+
+            const scrollArea = div.querySelector('.flex-1.overflow-auto');
+            if (scrollArea) {
+                scrollArea.addEventListener('scroll', () => updateSettingsScrollTheme(scrollArea), { passive: true });
+                updateSettingsScrollTheme(scrollArea);
+            }
+        }
+
+        function switchSettingsTab(windowId, tabName, event) {
+            // Hide all tabs
+            const tabs = document.querySelectorAll('#' + windowId + ' .settings-tab-content');
+            tabs.forEach(tab => tab.classList.add('hidden'));
+            
+            // Remove active state from all buttons
+            const buttons = document.querySelectorAll('#' + windowId + ' .settings-tab-btn');
+            buttons.forEach(btn => btn.classList.remove('active', 'bg-white/20'));
+            
+            // Show selected tab
+            const selectedTab = document.getElementById('settings-tab-' + tabName);
+            if (selectedTab) {
+                selectedTab.classList.remove('hidden');
+                const scrollArea = document.querySelector('#' + windowId + ' .flex-1.overflow-auto');
+                if (scrollArea) updateSettingsScrollTheme(scrollArea);
+            }
+            
+            // Add active state to clicked button
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.add('active', 'bg-white/20');
+            } else if (event && event.target) {
+                event.target.classList.add('active', 'bg-white/20');
+            }
+        }
+
+        function updateSettingsScrollTheme(el) {
+            if (!el) return;
+            const maxScroll = Math.max(el.scrollHeight - el.clientHeight, 1);
+            const ratio = Math.min(1, Math.max(0, el.scrollTop / maxScroll));
+            const hue = 210 + ratio * 80;
+            const alpha = 0.55 + ratio * 0.25;
+            document.documentElement.style.setProperty('--accent', `hsl(${hue}, 86%, 68%)`);
+            document.documentElement.style.setProperty('--scrollbar-thumb', `hsla(${hue}, 86%, 70%, ${alpha})`);
         }
 
         function setWallpaper(url) {
