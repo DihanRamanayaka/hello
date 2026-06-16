@@ -239,12 +239,13 @@
 
     <div id="boot-screen" class="fixed inset-0 bg-[#1a1b26] z-[9999] flex flex-col items-center justify-center transition-opacity duration-800">
         <div class="relative">
+            <div class="text-4xl font-bold tracking-tighter mb-4" id="boot-title">YOESHI OS</div>
             <div class="absolute -inset-3 blur-2xl opacity-40 bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500 animate-[bootGlow_2s_ease-in-out_infinite] pointer-events-none" style="border-radius:9999px;"></div>
         </div>
         <div class="w-72 h-2.5 bg-white/10 rounded-full overflow-hidden">
             <div class="h-full bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500" id="boot-bar" style="width:0%"></div>
         </div>
-        <div class="hidden" id="boot-step">Initializing…</div>
+        <div class="mt-3 text-xs opacity-70 font-mono" id="boot-step">Initializing…</div>
     </div>
     <style>@keyframes loading { 0% { width: 0%; } 50% { width: 100%; } 100% { width: 0%; } }</style>
 
