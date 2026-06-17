@@ -181,7 +181,19 @@
         }
 
         .console-link { color:#7dd3fc; text-decoration:underline; cursor:pointer; }
+
+        /* Extra terminal colors */
+        .console-line.cmd { color: #93c5fd; }
+        .console-line.info { color: #7dd3fc; }
+        .console-line.warn { color: #fbbf24; }
+        .console-line.error { color: #fb7185; }
+        .console-line.good { color: #34d399; }
+
+        .cursor-blink { animation: blinkCursor 1s step-end infinite; }
+        @keyframes blinkCursor { 50% { opacity: 0; } }
+
         .progress-line { padding: 6px 0; }
+
         .progress-line div { line-height: 1.4; }
         .dock-item:hover { transform: translateY(-4px) scale(1.05); background: var(--accent); color: white; }
         .dock-indicator {
@@ -241,8 +253,8 @@
         <div class="relative">
             <div class="absolute -inset-3 blur-2xl opacity-40 bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500 animate-[bootGlow_2s_ease-in-out_infinite] pointer-events-none" style="border-radius:9999px;"></div>
         </div>
-        <div class="w-72 h-2.5 bg-white/10 rounded-full overflow-hidden">
-            <div class="h-full bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500" id="boot-bar" style="width:0%"></div>
+        <div class="w-72 h-2.5 bg-white/10 rounded-full overflow-hidden" aria-label="Boot progress">
+            <div class="h-full bg-white/90" id="boot-bar" style="width:0%"></div>
         </div>
         <div class="hidden" id="boot-step">Initializing…</div>
     </div>
@@ -309,9 +321,11 @@
     </div>
 
     <div id="shutdown-screen" class="hidden fixed inset-0 bg-black z-[999] flex flex-col items-center justify-center">
-        <i class="ph ph-circle-notch text-5xl animate-spin text-blue-400 mb-4"></i>
+        <i class="ph ph-circle-notch text-5xl animate-spin text-blue-400 mb-4" aria-hidden="true"></i>
         <div class="text-sm tracking-widest uppercase opacity-70">Shutting down Yoeshi OS...</div>
     </div>
+
+
 
     <script>
         let zIndexCounter = 10;
@@ -320,7 +334,12 @@
             'https://github.com/DihanRamanayaka/hello/blob/main/docs/assets/portfolio-2.gif?raw=trueauto=format&fit=crop&q=80&w=100',
             'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR2Yj5i9M6n58KMmcbziuo3kG2cBw1RnLQH9Qon1-c0YA&s=10&fit=crop&q=80&w=100',
             'https://mir-s3-cdn-cf.behance.net/project_modules/max_1200/61d414169310563.644a50ec85a90.gif?auto=format&fit=crop&q=80&w=100',
-            'https://wallpaperaccess.com/full/9089214.jpg?auto=format&fit=crop&q=80&w=1000'
+            'https://i.pinimg.com/originals/b8/2f/28/b82f28a7e9c8fcb3868d3d94652c107c.gif?auto=format&fit=crop&q=80&w=1000',
+            'https://giffiles.alphacoders.com/162/162646.gif?auto=format&fit=crop&q=80&w=1000',
+            'https://cdn.lospec.com/gallery/cat-in-cloudy-sky-105969.gif?auto=format&fit=crop&q=80&w=1000',
+            'https://i.pinimg.com/originals/fb/6a/15/fb6a151e275aca9be3cbcacf4c67cc2d.gif?auto=format&fit=crop&q=80&w=1000',
+            'https://i.pinimg.com/originals/5a/c0/4e/5ac04e87c1d5e9a011ab60a2beddb28d.gif?auto=format&fit=crop&q=80&w=1000'
+
         ];
 
         // Set default background to the first wallpaper
@@ -955,6 +974,7 @@
                 return;
             }
             const div = document.createElement('div');
+
             div.className = `glass-window app-${appType} window-open`;
             div.id = id;
             div.style.left = '300px';
@@ -985,6 +1005,27 @@
                             </div>
                             <h3 class="font-bold mb-4">System Opacity</h3>
                             <input type="range" min="0.3" max="0.9" step="0.1" value="0.7" onchange="updateOpacity(this.value)" class="w-full">
+
+                            <h3 class="font-bold mt-8 mb-2">Touch Window Move</h3>
+                            <p class="text-sm opacity-70 mb-3">Move windows by touching the header (best on mobile).</p>
+                            <label class="flex items-center gap-3 text-sm opacity-90">
+                                <input id="touch-move-toggle" type="checkbox" checked onchange="setTouchMoveEnabled(this.checked)" />
+                                Enable touch drag
+                            </label>
+
+                            <h3 class="font-bold mt-8 mb-2">Extra Controls</h3>
+                            <div class="space-y-2 text-sm opacity-90">
+                                <label class="flex items-center gap-3">
+                                    <input id="touch-smooth-toggle" type="checkbox" checked onchange="setTouchSmoothEnabled(this.checked)" />
+                                    Smooth touch dragging
+                                </label>
+                                <label class="flex items-center gap-3">
+                                    <input id="touch-edge-snap-toggle" type="checkbox" checked onchange="setTouchEdgeSnapEnabled(this.checked)" />
+                                    Edge snap
+                                </label>
+                            </div>
+
+
                         </div>
                         <div id="settings-tab-about" class="settings-tab-content hidden">
                             <div class="space-y-4">
@@ -994,7 +1035,7 @@
                                 </div>
                                 <div class="border-t border-white/10 pt-4">
                                     <p class="text-sm opacity-70 leading-relaxed mb-4">
-                                        Yoeshi OS is a premium, ethereal web based project similler to an operating system designed for creative minds and digital aesthetes. Crafted with meticulous attention to detail, it combines stunning visual design with seamless functionality.
+                                        Yoeshi OS is a web-based project that serves as a fantastic addition to my portfolio and imitates the user interface of an operating system.
                                     </p>
                                 </div>
                                 <div class="border-t border-white/10 pt-4 space-y-3">
@@ -1093,6 +1134,36 @@
         }
         function updateOpacity(val) { document.documentElement.style.setProperty('--glass-opacity', val); }
         function bringToFront(id) { document.getElementById(id).style.zIndex = ++zIndexCounter; }
+
+        // Settings: enable/disable touch window dragging.
+        function setTouchMoveEnabled(enabled) {
+            window.__yoeshiTouchMoveEnabled = !!enabled;
+        }
+
+        function touchMoveEnabled() {
+            if (typeof window.__yoeshiTouchMoveEnabled === 'undefined') return true;
+            return !!window.__yoeshiTouchMoveEnabled;
+        }
+
+        function setTouchSmoothEnabled(enabled) {
+            window.__yoeshiTouchSmoothEnabled = !!enabled;
+        }
+
+        function touchSmoothEnabled() {
+            if (typeof window.__yoeshiTouchSmoothEnabled === 'undefined') return true;
+            return !!window.__yoeshiTouchSmoothEnabled;
+        }
+
+        function setTouchEdgeSnapEnabled(enabled) {
+            window.__yoeshiTouchEdgeSnapEnabled = !!enabled;
+        }
+
+        function touchEdgeSnapEnabled() {
+            if (typeof window.__yoeshiTouchEdgeSnapEnabled === 'undefined') return true;
+            return !!window.__yoeshiTouchEdgeSnapEnabled;
+        }
+        
+
         
         function shutdown() { 
             document.getElementById('shutdown-screen').classList.remove('hidden');
@@ -1206,23 +1277,72 @@
         }
 
         function startDrag(e, id) {
-            if (window.innerWidth < 768) return; 
             const elmnt = document.getElementById(id);
-            let pos1 = 0, pos2 = 0, pos3 = e.clientX, pos4 = e.clientY;
-            document.onmousemove = (e) => {
-                pos1 = pos3 - e.clientX;
-                pos2 = pos4 - e.clientY;
-                pos3 = e.clientX;
-                pos4 = e.clientY;
-                elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
-                elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+            if (!elmnt) return;
+
+            // On touch devices, allow/deny touch dragging from Settings.
+            if (e && (e.touches || e.pointerType === 'touch')) {
+                if (!touchMoveEnabled()) return;
+            }
+
+
+            // Use pointer coordinates so it works for both mouse and touch.
+            const clientX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+            const clientY = (e.touches && e.touches[0]) ? e.touches[0].clientY : e.clientY;
+            let pos3 = clientX, pos4 = clientY;
+            let pos1 = 0, pos2 = 0;
+
+            bringToFront(id);
+
+            // Prevent iframe/tap gestures from firing while dragging.
+            try { e.preventDefault(); } catch {}
+
+            document.onpointermove = (ev) => {
+                // ignore multi-touch while dragging
+                if (ev && ev.pointerType === 'touch' && ev.isPrimary === false) return;
+
+                // Optional smoothing (simple exponential moving average)
+                let x = ev.clientX;
+                let y = ev.clientY;
+                if (ev && ev.pointerType === 'touch' && touchSmoothEnabled()) {
+                    if (typeof window.__yoeshiTouchSmoothX === 'number') {
+                        x = window.__yoeshiTouchSmoothX * 0.75 + ev.clientX * 0.25;
+                        y = window.__yoeshiTouchSmoothY * 0.75 + ev.clientY * 0.25;
+                    }
+                    window.__yoeshiTouchSmoothX = x;
+                    window.__yoeshiTouchSmoothY = y;
+                }
+
+                pos1 = pos3 - x;
+                pos2 = pos4 - y;
+                pos3 = x;
+                pos4 = y;
+
+                let nextTop = elmnt.offsetTop - pos2;
+                let nextLeft = elmnt.offsetLeft - pos1;
+
+                // Optional edge snap (snap to nearest 10px)
+                if (ev && ev.pointerType === 'touch' && touchEdgeSnapEnabled()) {
+                    const snap = 10;
+                    nextTop = Math.round(nextTop / snap) * snap;
+                    nextLeft = Math.round(nextLeft / snap) * snap;
+                }
+
+                elmnt.style.top = nextTop + "px";
+                elmnt.style.left = nextLeft + "px";
             };
-            document.onmouseup = () => { document.onmouseup = null; document.onmousemove = null; };
+            document.onpointerup = () => {
+                document.onpointerup = null;
+                document.onpointermove = null;
+            };
         }
 
+
         function startResize(e, el) {
+            // Keep resizing available even when touch dragging is disabled.
             e.preventDefault();
             e.stopPropagation();
+
             const startWidth = el.offsetWidth;
             const startHeight = el.offsetHeight;
             const startX = e.clientX;
