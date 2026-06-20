@@ -264,6 +264,13 @@
         /* ensure spotlight renders above the backdrop and other UI */
         .spotlight-window { z-index: 100000 !important; }
         .spotlight-inner { width: 100%; max-width: 600px; }
+        /* In-window music search overlay (like Spotlight but scoped to the music window) */
+        .music-spotlight-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.45); z-index: 9999; display:flex; align-items:center; justify-content:center; }
+        .music-spotlight { width: 86%; max-width: 760px; border-radius: 12px; background: rgba(18,18,24,0.96); padding: 14px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); display:flex; flex-direction:column; gap:8px; }
+        .music-spotlight .spotlight-input { padding:10px 12px; }
+        .music-spotlight .spotlight-results { max-height: 300px; overflow:auto; border-radius:10px; }
+        .music-spotlight .spotlight-results ::-webkit-scrollbar { width: 10px; }
+        .music-spotlight .spotlight-results ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius:999px; border:2px solid rgba(18,18,24,0.96); }
         .spotlight-input { display:flex; gap:10px; align-items:center; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 12px 14px; }
         .spotlight-input i { color: rgba(255,255,255,0.8); font-size: 18px; }
         .spotlight-input input { background: transparent; border: none; outline: none; color: inherit; font-size: 16px; width: 100%; padding: 6px 0; }
@@ -379,6 +386,7 @@
         document.body.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('${wallpapers[0]}')`;
 
         window.onload = () => {
+            const bootEl = document.getElementById('boot-screen');
             const bootBar = document.getElementById('boot-bar');
             const bootStep = document.getElementById('boot-step');
             let pct = 0;
@@ -391,21 +399,41 @@
                 'Ready.'
             ];
 
+            // Safety fallback: remove boot screen after 8s in case something blocks progress
+            const safetyTimer = setTimeout(() => {
+                try {
+                    if (bootEl) {
+                        bootEl.style.opacity = '0';
+                        setTimeout(() => { if (bootEl.parentNode) bootEl.parentNode.removeChild(bootEl); }, 700);
+                    }
+                } catch (e) { console.warn('Boot safety removal failed', e); }
+            }, 8000);
+
             const tick = () => {
-                pct += 6 + Math.random() * 3;
-                const clamped = Math.min(100, pct);
-                if (bootBar) bootBar.style.width = clamped + '%';
-                if (bootStep) {
-                    const idx = Math.min(steps.length - 1, Math.floor((clamped / 100) * steps.length));
-                    bootStep.textContent = steps[idx];
-                }
-                if (clamped < 100) {
-                    requestAnimationFrame(() => setTimeout(tick, 70));
-                } else {
-                    setTimeout(() => {
-                        document.getElementById('boot-screen').style.opacity = '0';
-                        setTimeout(() => document.getElementById('boot-screen').remove(), 700);
-                    }, 220);
+                try {
+                    pct += 6 + Math.random() * 3;
+                    const clamped = Math.min(100, pct);
+                    if (bootBar) bootBar.style.width = clamped + '%';
+                    if (bootStep) {
+                        const idx = Math.min(steps.length - 1, Math.floor((clamped / 100) * steps.length));
+                        bootStep.textContent = steps[idx];
+                    }
+                    if (clamped < 100) {
+                        requestAnimationFrame(() => setTimeout(tick, 70));
+                    } else {
+                        clearTimeout(safetyTimer);
+                        setTimeout(() => {
+                            try {
+                                if (bootEl) bootEl.style.opacity = '0';
+                                setTimeout(() => { if (bootEl && bootEl.parentNode) bootEl.parentNode.removeChild(bootEl); }, 700);
+                            } catch (e) { console.warn('Boot removal failed', e); }
+                        }, 220);
+                    }
+                } catch (err) {
+                    console.error('Boot tick error', err);
+                    // ensure we still remove boot screen on unexpected error
+                    clearTimeout(safetyTimer);
+                    try { if (bootEl) { bootEl.style.opacity = '0'; setTimeout(()=>{ if (bootEl.parentNode) bootEl.parentNode.removeChild(bootEl); },700); } } catch(e){}
                 }
             };
             tick();
@@ -424,7 +452,88 @@
                 el.remove();
                 updateDock(appType);
             }
+
         }
+
+            // In-window music search overlay functions
+            window.musicOpenSearch = function(mid) {
+                const win = document.getElementById(mid);
+                if (!win) return;
+                // avoid duplicate overlay
+                if (win.querySelector('.music-spotlight-backdrop')) {
+                    const fld = win.querySelector('.music-spotlight input'); if (fld) fld.focus(); return;
+                }
+                const backdrop = document.createElement('div');
+                backdrop.className = 'music-spotlight-backdrop';
+                const inner = document.createElement('div'); inner.className = 'music-spotlight';
+                inner.innerHTML = `
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div style="display:flex;align-items:center;gap:8px;"><span class="text-sm opacity-60 font-mono">Search SoundCloud</span></div>
+                        <div class="spotlight-hint">Esc to close</div>
+                    </div>
+                    <div class="spotlight-input"><i class="ph ph-magnifying-glass"></i><input id="music-search-overlay-input-${mid}" type="text" placeholder="Search or paste URL" class="flex-grow bg-transparent border-none outline-none text-sm" /></div>
+                    <div class="spotlight-results" id="music-search-overlay-results-${mid}"></div>
+                `;
+                backdrop.appendChild(inner);
+                // close on click outside
+                backdrop.addEventListener('click', (ev) => { if (ev.target === backdrop) { musicCloseSearch(mid); } });
+                // key handling
+                document.addEventListener('keydown', function _kbd(e){ if (e.key === 'Escape') { musicCloseSearch(mid); document.removeEventListener('keydown', _kbd); } });
+                win.appendChild(backdrop);
+                const inputOverlay = document.getElementById('music-search-overlay-input-' + mid);
+                if (inputOverlay) {
+                    inputOverlay.addEventListener('keydown', (e) => { if (e.key === 'Enter') { musicSearchOverlay(mid); } });
+                    inputOverlay.focus();
+                    // copy existing search value
+                    const mainInput = document.getElementById(`music-search-${mid}`);
+                    if (mainInput) inputOverlay.value = mainInput.value;
+                }
+            };
+
+            window.musicCloseSearch = function(mid) {
+                const win = document.getElementById(mid);
+                if (!win) return;
+                const b = win.querySelector('.music-spotlight-backdrop');
+                if (b && b.parentNode) b.parentNode.removeChild(b);
+            };
+
+            window.musicSearchOverlay = async function(mid) {
+                const qEl = document.getElementById('music-search-overlay-input-' + mid);
+                const query = qEl ? qEl.value.trim() : '';
+                const resultsEl = document.getElementById('music-search-overlay-results-' + mid);
+                if (!resultsEl) return;
+                if (!query) { resultsEl.innerHTML = '<div class="p-2 text-sm opacity-70">Enter keywords or paste a SoundCloud URL.</div>'; return; }
+                // if looks like URL, play directly
+                if (/^https?:\/\//i.test(query) || /^\//.test(query)) {
+                    const url = /^https?:\/\//i.test(query) ? query : 'https://soundcloud.com' + query;
+                    window.musicLoadTrack(mid, url, true);
+                    musicCloseSearch(mid);
+                    return;
+                }
+                resultsEl.innerHTML = 'Searching...';
+                try {
+                    const searchUrl = 'https://soundcloud.com/search/sounds?q=' + encodeURIComponent(query);
+                    const proxy = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(searchUrl);
+                    const res = await fetch(proxy);
+                    if (!res.ok) throw new Error('Search failed');
+                    const text = await res.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(text, 'text/html');
+                    const anchors = Array.from(doc.querySelectorAll('a')).filter(a => {
+                        const h = a.getAttribute('href') || '';
+                        return /^\/[a-zA-Z0-9\-_.]+\/[a-zA-Z0-9\-_.]+$/.test(h) && !h.includes('/sets/');
+                    });
+                    const seen = new Set();
+                    const tracksFound = anchors.map(a => ({ href: a.getAttribute('href'), title: (a.textContent || '').trim() })).filter(t => { if (!t.href) return false; if (seen.has(t.href)) return false; seen.add(t.href); return true; }).slice(0, 12);
+                    if (tracksFound.length === 0) { resultsEl.innerHTML = `<div class="p-2">No results; <a href='${searchUrl}' target='_blank' rel='noopener'>open on SoundCloud</a></div>`; return; }
+                    resultsEl.innerHTML = tracksFound.map(t => `<div class="p-2 border-b border-white/10 cursor-pointer hover:bg-white/5" data-href="${t.href}">${t.title || t.href}</div>`).join('');
+                    Array.from(resultsEl.children).forEach(ch => ch.addEventListener('click', () => {
+                        const href = ch.dataset.href; const url = 'https://soundcloud.com' + href; window.musicLoadTrack(mid, url, true); musicCloseSearch(mid);
+                    }));
+                } catch (e) {
+                    resultsEl.innerHTML = `Search failed; <a href="https://soundcloud.com/search/sounds?q=${encodeURIComponent(query)}" target="_blank" rel="noopener">open on SoundCloud</a>`;
+                }
+            };
 
         function restoreWindow(appType) {
             const minimized = document.querySelector(`.app-${appType}[data-minimized="true"]`);
@@ -642,7 +751,7 @@
 
                     <div class="p-4 h-full flex flex-col gap-3">
                         <!-- Spotify-like layout -->
-                        <div class="flex-1 min-h-0 grid grid-cols-[160px_1fr_190px] gap-3">
+                        <div class="flex-1 min-h-0 grid grid-cols-[160px_1fr_280px] gap-3">
                             <!-- Sidebar -->
                             <aside class="min-h-0 bg-white/5 rounded-2xl border border-white/10 overflow-hidden">
                                 <div class="p-3">
@@ -676,7 +785,7 @@
                             <section class="min-h-0 bg-white/5 rounded-2xl border border-white/10 overflow-hidden flex flex-col">
                                 <div class="p-3 border-b border-white/10">
                                     <div class="flex gap-2 items-center">
-                                        <input id="music-search-${id}" type="text" placeholder="Search SoundCloud or paste URL" class="flex-grow bg-transparent border border-white/10 rounded-xl px-3 py-2 text-sm text-white/80 outline-none">
+                                        <input id="music-search-${id}" type="text" placeholder="Search SoundCloud or paste URL" onfocus="musicOpenSearch('${id}')" class="flex-grow bg-transparent border border-white/10 rounded-xl px-3 py-2 text-sm text-white/80 outline-none">
                                         <button class="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-400 text-white rounded-xl font-semibold" onclick="musicSearch('${id}')">Search</button>
                                     </div>
                                 </div>
@@ -693,7 +802,7 @@
                                 </div>
                             </section>
 
-                            <!-- Now playing card -->
+                            <!-- Now playing card (larger) -->
                             <aside class="min-h-0 bg-white/5 rounded-2xl border border-white/10 overflow-hidden flex flex-col">
                                 <div class="p-3 flex-1 min-h-0">
                                     <div class="rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-transparent p-3 relative overflow-hidden">
@@ -759,6 +868,19 @@
                     const src = 'https://w.soundcloud.com/player/?url=' + encodeURIComponent(url) + '&auto_play=' + (autoplay ? 'true' : 'false') + '&hide_related=true&show_comments=false&visual=true';
                     iframe.src = src;
                     document.getElementById(`music-title-${id}`).innerText = (url.split('/').slice(-1)[0] || url);
+                };
+
+                // expose a global loader so overlay search can play tracks
+                window.musicLoadTrack = (mid, url, autoplay = false) => {
+                    try {
+                        const ifr = document.getElementById(`music-iframe-${mid}`);
+                        if (ifr) {
+                            const src2 = 'https://w.soundcloud.com/player/?url=' + encodeURIComponent(url) + '&auto_play=' + (autoplay ? 'true' : 'false') + '&hide_related=true&show_comments=false&visual=true';
+                            ifr.src = src2;
+                        }
+                        const titleEl = document.getElementById(`music-title-${mid}`);
+                        if (titleEl) titleEl.innerText = (url.split('/').slice(-1)[0] || url);
+                    } catch (e) { console.warn('musicLoadTrack error', e); }
                 };
 
                 // load initial track
