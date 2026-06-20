@@ -181,7 +181,19 @@
         }
 
         .console-link { color:#7dd3fc; text-decoration:underline; cursor:pointer; }
+
+        /* Extra terminal colors */
+        .console-line.cmd { color: #93c5fd; }
+        .console-line.info { color: #7dd3fc; }
+        .console-line.warn { color: #fbbf24; }
+        .console-line.error { color: #fb7185; }
+        .console-line.good { color: #34d399; }
+
+        .cursor-blink { animation: blinkCursor 1s step-end infinite; }
+        @keyframes blinkCursor { 50% { opacity: 0; } }
+
         .progress-line { padding: 6px 0; }
+
         .progress-line div { line-height: 1.4; }
         .dock-item:hover { transform: translateY(-4px) scale(1.05); background: var(--accent); color: white; }
         .dock-indicator {
@@ -233,19 +245,51 @@
         #context-menu.visible { display: block; }
         #context-menu .item { padding: 8px 12px; cursor: pointer; font-size: 13px; }
         #context-menu .item:hover { background: rgba(255,255,255,0.03); }
+
+        /* Spotlight (macOS-like) */
+        .spotlight-window { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 640px; height: auto; max-width: calc(100% - 48px); border-radius: 18px; /* use an opaque-ish background to avoid backdrop bleed */ background: rgba(18,18,24,0.92); backdrop-filter: none !important; -webkit-backdrop-filter: none !important; box-shadow: 0 30px 80px rgba(0,0,0,0.6); padding: 18px; display: flex; flex-direction: column; gap: 10px; align-items: center; opacity: 0; }
+
+        /* ensure no blur/filter affects spotlight children */
+        .spotlight-window, .spotlight-window * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; filter: none !important; }
+
+        /* Backdrop behind Spotlight (no blur to avoid affecting spotlight rendering) */
+        #spotlight-backdrop { position: fixed; inset: 0; background: rgba(6,7,10,0.55); /* no backdrop-filter here */ z-index: 9998; opacity: 0; transition: opacity 220ms ease; }
+
+        /* Spotlight open animation (preserves centering transform) */
+        @keyframes spotlightOpen {
+            from { transform: translate(-50%, -50%) scale(0.98); opacity: 0; }
+            to   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        .spotlight-window.window-open { animation: spotlightOpen 260ms cubic-bezier(.2,.9,.3,1) both; }
+        /* ensure spotlight renders above the backdrop and other UI */
+        .spotlight-window { z-index: 100000 !important; }
+        .spotlight-inner { width: 100%; max-width: 600px; }
+        .spotlight-input { display:flex; gap:10px; align-items:center; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 12px 14px; }
+        .spotlight-input i { color: rgba(255,255,255,0.8); font-size: 18px; }
+        .spotlight-input input { background: transparent; border: none; outline: none; color: inherit; font-size: 16px; width: 100%; padding: 6px 0; }
+        .spotlight-hint { color: rgba(255,255,255,0.65); font-size: 12px; margin-left: 6px; }
+        .spotlight-results { width: 100%; max-height: 220px; overflow:auto; margin-top: 6px; border-radius: 10px; }
+        /* Spotlight scrollbar matches themed glass scrollbars */
+        .spotlight-results { scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track); }
+        .spotlight-results ::-webkit-scrollbar { width: 10px; height: 10px; }
+        .spotlight-results ::-webkit-scrollbar-track { background: var(--scrollbar-track); border-radius: 999px; }
+        .spotlight-results ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 999px; border: 2px solid rgba(18,18,24,0.92); }
+        .spotlight-results ::-webkit-scrollbar-thumb:hover { background: rgba(122,162,247,0.75); }
+        .spotlight-result { display:flex; gap:12px; align-items:center; padding:10px 12px; border-radius:8px; cursor:pointer; }
+        .spotlight-result:hover { background: rgba(255,255,255,0.02); }
+        .spotlight-result .meta { color: rgba(255,255,255,0.65); font-size: 12px; }
+
+        /* small avatar/icon placeholder */
+        .spotlight-icon { width:36px; height:36px; border-radius:8px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:18px; color: white; }
     </style>
 </head>
 <body class="w-screen h-screen">
 
     <div id="boot-screen" class="fixed inset-0 bg-[#1a1b26] z-[9999] flex flex-col items-center justify-center transition-opacity duration-800">
-        <div class="relative">
-            <div class="text-4xl font-bold tracking-tighter mb-4" id="boot-title">YOESHI OS</div>
-            <div class="absolute -inset-3 blur-2xl opacity-40 bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500 animate-[bootGlow_2s_ease-in-out_infinite] pointer-events-none" style="border-radius:9999px;"></div>
+        <div class="w-72 h-2.5 bg-white/10 rounded-full overflow-hidden" aria-label="Boot progress">
+            <div class="h-full bg-white/90" id="boot-bar" style="width:0%"></div>
         </div>
-        <div class="w-72 h-2.5 bg-white/10 rounded-full overflow-hidden">
-            <div class="h-full bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500" id="boot-bar" style="width:0%"></div>
-        </div>
-        <div class="mt-3 text-xs opacity-70 font-mono" id="boot-step">Initializing…</div>
+        <div class="hidden" id="boot-step">Initializing…</div>
     </div>
     <style>@keyframes loading { 0% { width: 0%; } 50% { width: 100%; } 100% { width: 0%; } }</style>
 
@@ -310,9 +354,11 @@
     </div>
 
     <div id="shutdown-screen" class="hidden fixed inset-0 bg-black z-[999] flex flex-col items-center justify-center">
-        <i class="ph ph-circle-notch text-5xl animate-spin text-blue-400 mb-4"></i>
+        <i class="ph ph-circle-notch text-5xl animate-spin text-blue-400 mb-4" aria-hidden="true"></i>
         <div class="text-sm tracking-widest uppercase opacity-70">Shutting down Yoeshi OS...</div>
     </div>
+
+
 
     <script>
         let zIndexCounter = 10;
@@ -321,7 +367,12 @@
             'https://github.com/DihanRamanayaka/hello/blob/main/docs/assets/portfolio-2.gif?raw=trueauto=format&fit=crop&q=80&w=100',
             'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR2Yj5i9M6n58KMmcbziuo3kG2cBw1RnLQH9Qon1-c0YA&s=10&fit=crop&q=80&w=100',
             'https://mir-s3-cdn-cf.behance.net/project_modules/max_1200/61d414169310563.644a50ec85a90.gif?auto=format&fit=crop&q=80&w=100',
-            'https://wallpaperaccess.com/full/9089214.jpg?auto=format&fit=crop&q=80&w=1000'
+            'https://i.pinimg.com/originals/b8/2f/28/b82f28a7e9c8fcb3868d3d94652c107c.gif?auto=format&fit=crop&q=80&w=1000',
+            'https://giffiles.alphacoders.com/162/162646.gif?auto=format&fit=crop&q=80&w=1000',
+            'https://cdn.lospec.com/gallery/cat-in-cloudy-sky-105969.gif?auto=format&fit=crop&q=80&w=1000',
+            'https://i.pinimg.com/originals/fb/6a/15/fb6a151e275aca9be3cbcacf4c67cc2d.gif?auto=format&fit=crop&q=80&w=1000',
+            'https://i.pinimg.com/originals/5a/c0/4e/5ac04e87c1d5e9a011ab60a2beddb28d.gif?auto=format&fit=crop&q=80&w=1000'
+
         ];
 
         // Set default background to the first wallpaper
@@ -589,57 +640,115 @@
                         <span class="text-xs font-bold opacity-40 uppercase tracking-widest ml-4">Music</span>
                     </div>
 
-                    <div class="p-4 flex flex-col h-full gap-3">
-                        <div class="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-transparent">
-                            <div class="absolute -top-20 -left-20 w-44 h-44 rounded-full bg-blue-500/25 blur-2xl"></div>
-                            <div class="absolute -bottom-24 -right-24 w-56 h-56 rounded-full bg-cyan-400/20 blur-2xl"></div>
+                    <div class="p-4 h-full flex flex-col gap-3">
+                        <!-- Spotify-like layout -->
+                        <div class="flex-1 min-h-0 grid grid-cols-[160px_1fr_190px] gap-3">
+                            <!-- Sidebar -->
+                            <aside class="min-h-0 bg-white/5 rounded-2xl border border-white/10 overflow-hidden">
+                                <div class="p-3">
+                                    <div class="text-xs opacity-70 font-mono">Browse</div>
+                                </div>
+                                <nav class="px-2 pb-2">
+                                    <button data-music-nav="home" class="w-full text-left px-3 py-2 rounded-xl text-sm bg-white/10 hover:bg-white/20 transition">
+                                        <span class="inline-flex items-center gap-2">
+                                            <i class="ph ph-squares-four text-base"></i>
+                                            <span>Library</span>
+                                        </span>
+                                    </button>
+                                    <button data-music-nav="search" class="w-full text-left mt-1 px-3 py-2 rounded-xl text-sm text-white/70 hover:bg-white/10 transition">
+                                        <span class="inline-flex items-center gap-2">
+                                            <i class="ph ph-magnifying-glass text-base"></i>
+                                            <span>Search</span>
+                                        </span>
+                                    </button>
+                                    <div class="mt-4 px-3">
+                                        <div class="text-[11px] opacity-60 font-mono uppercase tracking-widest">Playlists</div>
+                                        <div class="mt-2 space-y-1">
+                                            <button class="w-full text-left px-3 py-2 rounded-xl text-sm text-white/70 hover:bg-white/10 transition">Liked Songs</button>
+                                            <button class="w-full text-left px-3 py-2 rounded-xl text-sm text-white/70 hover:bg-white/10 transition">Focus</button>
+                                            <button class="w-full text-left px-3 py-2 rounded-xl text-sm text-white/70 hover:bg-white/10 transition">Chill</button>
+                                        </div>
+                                    </div>
+                                </nav>
+                            </aside>
 
-                            <div class="relative flex items-center gap-3 p-3">
-                                <div class="w-14 h-14 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center">
-                                    <i class="ph-fill ph-music-notes text-2xl text-blue-200"></i>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <div class="text-xs opacity-70 font-mono">Now playing</div>
-                                    <div id="music-title-${id}" class="text-sm font-bold truncate">-</div>
-                                    <div id="music-subtitle-${id}" class="text-xs opacity-60 truncate">SoundCloud</div>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <button id="music-prev-${id}" class="px-3 py-1 bg-white/10 hover:bg-white/20 rounded-full transition">⟨</button>
-                                    <button id="music-play-${id}" class="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-400 text-white rounded-full font-semibold shadow-sm shadow-cyan-400/20">Play</button>
-                                    <button id="music-next-${id}" class="px-3 py-1 bg-white/10 hover:bg-white/20 rounded-full transition">⟩</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div class="flex items-center gap-3 mb-2">
-                                <div class="flex-1">
-                                    <div class="w-full h-3 bg-white/10 rounded overflow-hidden">
-                                        <div id="music-progress-${id}" style="width:0%" class="h-full bg-gradient-to-r from-blue-500 to-cyan-400"></div>
+                            <!-- Track list + search -->
+                            <section class="min-h-0 bg-white/5 rounded-2xl border border-white/10 overflow-hidden flex flex-col">
+                                <div class="p-3 border-b border-white/10">
+                                    <div class="flex gap-2 items-center">
+                                        <input id="music-search-${id}" type="text" placeholder="Search SoundCloud or paste URL" class="flex-grow bg-transparent border border-white/10 rounded-xl px-3 py-2 text-sm text-white/80 outline-none">
+                                        <button class="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-400 text-white rounded-xl font-semibold" onclick="musicSearch('${id}')">Search</button>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div class="flex items-center gap-3">
-                                <input id="music-volume-${id}" type="range" min="0" max="100" value="80" class="w-44">
-                                <div class="text-xs opacity-70 font-mono whitespace-nowrap">Vol</div>
-                                <div class="flex-1"></div>
-                                <button class="px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-xs" id="music-mute-${id}">Mute</button>
-                            </div>
-                        </div>
+                                <div class="flex-1 min-h-0 overflow-auto" id="music-results-${id}">
+                                    <div class="p-3 text-sm opacity-70">Type to search, then click a track.</div>
+                                </div>
 
-                        <div class="flex gap-2">
-                            <input id="music-search-${id}" type="text" placeholder="Search SoundCloud or paste URL" class="flex-grow bg-transparent border border-white/10 rounded-xl px-3 py-2 text-sm text-white/80">
-                            <button class="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-400 text-white rounded-xl font-semibold" onclick="musicSearch('${id}')">Search</button>
-                        </div>
+                                <div class="p-3 border-t border-white/10">
+                                    <div class="flex items-center justify-between text-xs opacity-70 font-mono">
+                                        <span>Tracks</span>
+                                        <span class="whitespace-nowrap">SoundCloud</span>
+                                    </div>
+                                </div>
+                            </section>
 
-                        <div id="music-results-${id}" class="overflow-auto bg-black/20 rounded-xl p-2" style="max-height:120px"></div>
+                            <!-- Now playing card -->
+                            <aside class="min-h-0 bg-white/5 rounded-2xl border border-white/10 overflow-hidden flex flex-col">
+                                <div class="p-3 flex-1 min-h-0">
+                                    <div class="rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-transparent p-3 relative overflow-hidden">
+                                        <div class="absolute -top-10 -left-10 w-32 h-32 rounded-full bg-blue-500/25 blur-2xl"></div>
+                                        <div class="absolute -bottom-14 -right-14 w-40 h-40 rounded-full bg-cyan-400/20 blur-2xl"></div>
 
-                        <div class="flex-1 rounded-xl overflow-hidden border border-white/10 bg-black/10">
-                            <iframe id="music-iframe-${id}" width="100%" height="100%" scrolling="no" frameborder="no" src=""></iframe>
+                                        <div class="relative">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-14 h-14 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center">
+                                                    <i class="ph-fill ph-music-notes text-2xl text-blue-200"></i>
+                                                </div>
+                                                <div class="min-w-0 flex-1">
+                                                    <div class="text-xs opacity-70 font-mono">Now playing</div>
+                                                    <div id="music-title-${id}" class="text-sm font-bold truncate">-</div>
+                                                    <div id="music-subtitle-${id}" class="text-xs opacity-60 truncate">SoundCloud</div>
+                                                </div>
+                                            </div>
+
+                                            <div class="mt-3">
+                                                <div class="w-full h-3 bg-white/10 rounded overflow-hidden">
+                                                    <div id="music-progress-${id}" style="width:0%" class="h-full bg-gradient-to-r from-blue-500 to-cyan-400"></div>
+                                                </div>
+                                            </div>
+
+                                            <div class="mt-3 flex items-center justify-center gap-3">
+                                                <button id="music-prev-${id}" class="px-3 py-1 bg-white/10 hover:bg-white/20 rounded-full transition" title="Previous">⟨</button>
+                                                <button id="music-play-${id}" class="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-400 text-white rounded-full font-semibold shadow-sm shadow-cyan-400/20" title="Play/Pause">Play</button>
+                                                <button id="music-next-${id}" class="px-3 py-1 bg-white/10 hover:bg-white/20 rounded-full transition" title="Next">⟩</button>
+                                            </div>
+
+                                            <div class="mt-3 flex items-center gap-3">
+                                                <input id="music-volume-${id}" type="range" min="0" max="100" value="80" class="w-full">
+                                            </div>
+
+                                            <div class="mt-2 flex items-center justify-between">
+                                                <div class="text-xs opacity-70 font-mono whitespace-nowrap">Vol</div>
+                                                <button class="px-3 py-1 bg-white/10 hover:bg-white/20 rounded text-xs" id="music-mute-${id}">Mute</button>
+                                            </div>
+
+                                            <div class="mt-3 rounded-xl overflow-hidden border border-white/10 bg-black/10">
+                                                <iframe id="music-iframe-${id}" width="100%" height="110" scrolling="no" frameborder="no" src=""></iframe>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="p-3 border-t border-white/10">
+                                    <div class="text-xs opacity-60 font-mono">Tip: hover/click tracks to play</div>
+                                </div>
+                            </aside>
                         </div>
                     </div>
                 `;
+
+
 
 
                 document.getElementById('windows-layer').appendChild(div);
@@ -956,6 +1065,7 @@
                 return;
             }
             const div = document.createElement('div');
+
             div.className = `glass-window app-${appType} window-open`;
             div.id = id;
             div.style.left = '300px';
@@ -986,6 +1096,27 @@
                             </div>
                             <h3 class="font-bold mb-4">System Opacity</h3>
                             <input type="range" min="0.3" max="0.9" step="0.1" value="0.7" onchange="updateOpacity(this.value)" class="w-full">
+
+                            <h3 class="font-bold mt-8 mb-2">Touch Window Move</h3>
+                            <p class="text-sm opacity-70 mb-3">Move windows by touching the header (best on mobile).</p>
+                            <label class="flex items-center gap-3 text-sm opacity-90">
+                                <input id="touch-move-toggle" type="checkbox" checked onchange="setTouchMoveEnabled(this.checked)" />
+                                Enable touch drag
+                            </label>
+
+                            <h3 class="font-bold mt-8 mb-2">Extra Controls</h3>
+                            <div class="space-y-2 text-sm opacity-90">
+                                <label class="flex items-center gap-3">
+                                    <input id="touch-smooth-toggle" type="checkbox" checked onchange="setTouchSmoothEnabled(this.checked)" />
+                                    Smooth touch dragging
+                                </label>
+                                <label class="flex items-center gap-3">
+                                    <input id="touch-edge-snap-toggle" type="checkbox" checked onchange="setTouchEdgeSnapEnabled(this.checked)" />
+                                    Edge snap
+                                </label>
+                            </div>
+
+
                         </div>
                         <div id="settings-tab-about" class="settings-tab-content hidden">
                             <div class="space-y-4">
@@ -995,7 +1126,7 @@
                                 </div>
                                 <div class="border-t border-white/10 pt-4">
                                     <p class="text-sm opacity-70 leading-relaxed mb-4">
-                                        Yoeshi OS is a premium, ethereal operating system designed for creative minds and digital aesthetes. Crafted with meticulous attention to detail, it combines stunning visual design with seamless functionality.
+                                        Yoeshi OS is a web-based project that serves as a fantastic addition to my portfolio and imitates the user interface of an operating system.
                                     </p>
                                 </div>
                                 <div class="border-t border-white/10 pt-4 space-y-3">
@@ -1094,6 +1225,155 @@
         }
         function updateOpacity(val) { document.documentElement.style.setProperty('--glass-opacity', val); }
         function bringToFront(id) { document.getElementById(id).style.zIndex = ++zIndexCounter; }
+
+        function openSpotlight() {
+            // Reuse if already open
+            const existing = document.getElementById('spotlight-win');
+
+            if (existing) {
+                existing.style.display = '';
+                bringToFront('spotlight-win');
+                const inp = document.getElementById('spotlight-input');
+                if (inp) inp.focus();
+                return;
+            }
+
+            const id = 'spotlight-win';
+            const div = document.createElement('div');
+            // Do not use the generic `glass-window` class — it applies backdrop blur.
+            div.className = `spotlight-window window-open`;
+            div.id = id;
+            // center the spotlight in the viewport
+            div.style.left = '50%';
+            div.style.top = '50%';
+            div.style.transform = 'translate(-50%, -50%)';
+            div.style.zIndex = ++zIndexCounter;
+
+            div.innerHTML = `
+                <div class="spotlight-inner">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span class="text-sm opacity-60 font-mono">Search</span>
+                        </div>
+                        <div class="spotlight-hint">Esc to close</div>
+                    </div>
+                    <div class="spotlight-input">
+                        <i class="ph ph-magnifying-glass"></i>
+                        <input id="spotlight-input" type="text" placeholder="Search apps or type: music / browser / console" autocomplete="off" />
+                    </div>
+                    <div id="spotlight-results" class="spotlight-results" aria-live="polite"></div>
+                </div>
+            `;
+
+            // create backdrop
+            let backdrop = document.getElementById('spotlight-backdrop');
+            if (!backdrop) {
+                backdrop = document.createElement('div');
+                backdrop.id = 'spotlight-backdrop';
+                document.body.appendChild(backdrop);
+                // allow click to close
+                backdrop.addEventListener('click', () => { const el = document.getElementById(id); if (el) el.remove(); backdrop.style.opacity = '0'; setTimeout(()=>{ if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop); }, 260); });
+                // force fade in
+                requestAnimationFrame(() => { backdrop.style.opacity = '1'; });
+            }
+
+            // append to body so spotlight is isolated from window-layer glass effects
+            document.body.appendChild(div);
+            // ensure spotlight sits above backdrop
+            const spotEl = document.getElementById(id);
+            spotEl.style.zIndex = ++zIndexCounter;
+            const input = document.getElementById('spotlight-input');
+            const results = document.getElementById('spotlight-results');
+
+            const close = () => {
+                const el = document.getElementById(id);
+                if (el) el.remove();
+            };
+
+            const actions = [
+                { label: 'Open Music', run: () => openMusicApp(), icon: 'ph-fill ph-music-notes' },
+                { label: 'Open Browser', run: () => openBrowser(), icon: 'ph-fill ph-globe' },
+                { label: 'Open Console', run: () => openConsole(), icon: 'ph-fill ph-terminal' },
+                { label: 'Open Settings', run: () => openSettings(), icon: 'ph-fill ph-gear' },
+                { label: 'Shutdown', run: () => shutdown(), icon: 'ph-fill ph-power' },
+                { label: 'Open Notepad', run: () => openNotepadApp(), icon: 'ph-fill ph-note' },
+                { label: 'Open Pong', run: () => openGame(), icon: 'ph-fill ph-game-controller' }
+            ];
+
+            const render = (q) => {
+                const query = (q || '').trim().toLowerCase();
+                const list = !query
+                    ? actions
+                    : actions.filter(a => a.label.toLowerCase().includes(query));
+
+                if (!list.length) {
+                    results.innerHTML = `<div class="p-2 text-xs opacity-70">No results</div>`;
+                    return;
+                }
+
+                results.innerHTML = list
+                    .slice(0, 8)
+                    .map(a => `
+                        <div class="spotlight-result" data-run="1">
+                            <div class="spotlight-icon">${a.icon?`<i class="${a.icon}"></i>`:''}</div>
+                            <div style="min-width:0;">
+                                <div style="font-weight:600; font-size:14px;">${a.label}</div>
+                                <div class="meta">App</div>
+                            </div>
+                        </div>
+                    `).join('');
+
+                Array.from(results.querySelectorAll('[data-run]')).forEach((node, idx) => {
+                    node.addEventListener('click', () => {
+                        list[idx].run();
+                        close();
+                    });
+                });
+            };
+
+            input.addEventListener('input', () => render(input.value));
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') { e.preventDefault(); close(); return; }
+                if (e.key === 'Enter') {
+                    const first = results.querySelector('[data-run]');
+                    if (first) first.click();
+                }
+            });
+
+            render('');
+            input.focus();
+        }
+
+
+        // Settings: enable/disable touch window dragging.
+        function setTouchMoveEnabled(enabled) {
+            window.__yoeshiTouchMoveEnabled = !!enabled;
+        }
+
+        function touchMoveEnabled() {
+            if (typeof window.__yoeshiTouchMoveEnabled === 'undefined') return true;
+            return !!window.__yoeshiTouchMoveEnabled;
+        }
+
+        function setTouchSmoothEnabled(enabled) {
+            window.__yoeshiTouchSmoothEnabled = !!enabled;
+        }
+
+        function touchSmoothEnabled() {
+            if (typeof window.__yoeshiTouchSmoothEnabled === 'undefined') return true;
+            return !!window.__yoeshiTouchSmoothEnabled;
+        }
+
+        function setTouchEdgeSnapEnabled(enabled) {
+            window.__yoeshiTouchEdgeSnapEnabled = !!enabled;
+        }
+
+        function touchEdgeSnapEnabled() {
+            if (typeof window.__yoeshiTouchEdgeSnapEnabled === 'undefined') return true;
+            return !!window.__yoeshiTouchEdgeSnapEnabled;
+        }
+        
+
         
         function shutdown() { 
             document.getElementById('shutdown-screen').classList.remove('hidden');
@@ -1207,23 +1487,73 @@
         }
 
         function startDrag(e, id) {
-            if (window.innerWidth < 768) return; 
             const elmnt = document.getElementById(id);
-            let pos1 = 0, pos2 = 0, pos3 = e.clientX, pos4 = e.clientY;
-            document.onmousemove = (e) => {
-                pos1 = pos3 - e.clientX;
-                pos2 = pos4 - e.clientY;
-                pos3 = e.clientX;
-                pos4 = e.clientY;
-                elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
-                elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+            if (!elmnt) return;
+
+            // On touch devices, allow/deny touch dragging from Settings.
+            if (e && (e.touches || e.pointerType === 'touch')) {
+                if (!touchMoveEnabled()) return;
+            }
+
+
+            // Use pointer coordinates so it works for both mouse and touch.
+            const clientX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+            const clientY = (e.touches && e.touches[0]) ? e.touches[0].clientY : e.clientY;
+            let pos3 = clientX, pos4 = clientY;
+            let pos1 = 0, pos2 = 0;
+
+            bringToFront(id);
+
+            // Prevent iframe/tap gestures from firing while dragging.
+            try { e.preventDefault(); } catch {}
+
+            document.onpointermove = (ev) => {
+                // ignore multi-touch while dragging
+                if (ev && ev.pointerType === 'touch' && ev.isPrimary === false) return;
+
+                // Optional smoothing (simple exponential moving average)
+                let x = ev.clientX;
+                let y = ev.clientY;
+                if (ev && ev.pointerType === 'touch' && touchSmoothEnabled()) {
+                    if (typeof window.__yoeshiTouchSmoothX === 'number') {
+                        x = window.__yoeshiTouchSmoothX * 0.75 + ev.clientX * 0.25;
+                        y = window.__yoeshiTouchSmoothY * 0.75 + ev.clientY * 0.25;
+                    }
+                    window.__yoeshiTouchSmoothX = x;
+                    window.__yoeshiTouchSmoothY = y;
+                }
+
+                pos1 = pos3 - x;
+                pos2 = pos4 - y;
+                pos3 = x;
+                pos4 = y;
+
+                let nextTop = elmnt.offsetTop - pos2;
+                let nextLeft = elmnt.offsetLeft - pos1;
+
+                // Optional edge snap (snap to nearest 10px)
+                if (ev && ev.pointerType === 'touch' && touchEdgeSnapEnabled()) {
+                    const snap = 10;
+                    nextTop = Math.round(nextTop / snap) * snap;
+                    nextLeft = Math.round(nextLeft / snap) * snap;
+                }
+
+                elmnt.style.top = nextTop + "px";
+                elmnt.style.left = nextLeft + "px";
             };
-            document.onmouseup = () => { document.onmouseup = null; document.onmousemove = null; };
+            document.onpointerup = () => {
+                document.onpointerup = null;
+                document.onpointermove = null;
+            };
         }
 
+
         function startResize(e, el) {
+            // Keep resizing available even when touch dragging is disabled.
             e.preventDefault();
             e.stopPropagation();
+
+            // Use pointer coordinates so it works on touch + mouse.
             const startWidth = el.offsetWidth;
             const startHeight = el.offsetHeight;
             const startX = e.clientX;
@@ -1231,14 +1561,34 @@
             const minW = parseInt(getComputedStyle(el).minWidth, 10) || 250;
             const minH = parseInt(getComputedStyle(el).minHeight, 10) || 200;
 
+            // Throttle to avoid jank.
+            let rafId = null;
+            let nextW = startWidth;
+            let nextH = startHeight;
+
+            function applySize() {
+                rafId = null;
+                el.style.width = Math.max(minW, nextW) + 'px';
+                el.style.height = Math.max(minH, nextH) + 'px';
+            }
+
             function onMove(evt) {
                 const dx = evt.clientX - startX;
                 const dy = evt.clientY - startY;
-                el.style.width = Math.max(minW, startWidth + dx) + 'px';
-                el.style.height = Math.max(minH, startHeight + dy) + 'px';
+                nextW = startWidth + dx;
+                nextH = startHeight + dy;
+
+                if (rafId === null) {
+                    rafId = requestAnimationFrame(applySize);
+                }
             }
 
             function onUp() {
+                if (rafId !== null) {
+                    cancelAnimationFrame(rafId);
+                    rafId = null;
+                }
+                applySize();
                 document.removeEventListener('pointermove', onMove);
                 document.removeEventListener('pointerup', onUp);
             }
@@ -1246,6 +1596,7 @@
             document.addEventListener('pointermove', onMove);
             document.addEventListener('pointerup', onUp);
         }
+
 
         function enableWindowResizing(win) {
             if (!win || win.dataset.resizeEnabled === 'true') return;
@@ -1278,8 +1629,21 @@
             document.getElementById('clock').innerText = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
         }, 1000);
 
+        function initGlobalShortcuts() {
+            document.addEventListener('keydown', (e) => {
+                const key = (e.key || '').toLowerCase();
+                const isS = key === 's';
+                if (!isS) return;
+                if ((e.ctrlKey || e.metaKey) && e.altKey) {
+                    e.preventDefault();
+                    openSpotlight();
+                }
+            });
+        }
+
+        initGlobalShortcuts();
+
         // Context menu behavior
-        (function(){
             const menu = document.getElementById('context-menu');
             document.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
@@ -1311,8 +1675,6 @@
                     }
                 }
             });
-        })();
     </script>
 </body>
 </html>
-
