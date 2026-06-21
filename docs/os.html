@@ -751,7 +751,7 @@
 
                     <div class="p-4 h-full flex flex-col gap-3">
                         <!-- Spotify-like layout -->
-                        <div class="flex-1 min-h-0 grid grid-cols-[160px_1fr_280px] gap-3">
+                        <div class="flex-1 min-h-0 grid grid-cols-[160px_1fr] gap-3">
                             <!-- Sidebar -->
                             <aside class="min-h-0 bg-white/5 rounded-2xl border border-white/10 overflow-hidden">
                                 <div class="p-3">
@@ -764,7 +764,7 @@
                                             <span>Library</span>
                                         </span>
                                     </button>
-                                    <button data-music-nav="search" class="w-full text-left mt-1 px-3 py-2 rounded-xl text-sm text-white/70 hover:bg-white/10 transition">
+                                    <button data-music-nav="search" onclick="musicOpenSearch('${id}')" class="w-full text-left mt-1 px-3 py-2 rounded-xl text-sm text-white/70 hover:bg-white/10 transition">
                                         <span class="inline-flex items-center gap-2">
                                             <i class="ph ph-magnifying-glass text-base"></i>
                                             <span>Search</span>
@@ -781,26 +781,7 @@
                                 </nav>
                             </aside>
 
-                            <!-- Track list + search -->
-                            <section class="min-h-0 bg-white/5 rounded-2xl border border-white/10 overflow-hidden flex flex-col">
-                                <div class="p-3 border-b border-white/10">
-                                    <div class="flex gap-2 items-center">
-                                        <input id="music-search-${id}" type="text" placeholder="Search SoundCloud or paste URL" onfocus="musicOpenSearch('${id}')" class="flex-grow bg-transparent border border-white/10 rounded-xl px-3 py-2 text-sm text-white/80 outline-none">
-                                        <button class="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-400 text-white rounded-xl font-semibold" onclick="musicSearch('${id}')">Search</button>
-                                    </div>
-                                </div>
-
-                                <div class="flex-1 min-h-0 overflow-auto" id="music-results-${id}">
-                                    <div class="p-3 text-sm opacity-70">Type to search, then click a track.</div>
-                                </div>
-
-                                <div class="p-3 border-t border-white/10">
-                                    <div class="flex items-center justify-between text-xs opacity-70 font-mono">
-                                        <span>Tracks</span>
-                                        <span class="whitespace-nowrap">SoundCloud</span>
-                                    </div>
-                                </div>
-                            </section>
+                            <!-- Track list removed: search opens as overlay from sidebar -->
 
                             <!-- Now playing card (larger) -->
                             <aside class="min-h-0 bg-white/5 rounded-2xl border border-white/10 overflow-hidden flex flex-col">
