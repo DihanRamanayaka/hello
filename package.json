@@ -15,7 +15,7 @@
       "design",
       "websites"
     ],
-    "author": "Paul",
+    "author": "Dihan Ramanayaka",
     "license": "MIT",
     "devDependencies": {
       "tailwindcss": "^3.4.1"
